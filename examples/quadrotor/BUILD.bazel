@@ -110,6 +110,7 @@ drake_cc_binary(
 	"//systems/primitives:linear_system",
         "//systems/primitives:trajectory_source",
         "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
         "//systems/trajectory_optimization:admm_solver",
 	"//solvers:snopt_solver",
 	"//solvers:ipopt_solver",
