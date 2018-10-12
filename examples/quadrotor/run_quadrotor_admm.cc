@@ -7,16 +7,12 @@
 
 #include "drake/systems/framework/system.h"
 #include "drake/systems/framework/context.h"
-//#include "drake/common/find_resource.h"
-#include "drake/examples/acrobot/acrobot_plant.h"
-//#include "drake/lcm/drake_lcm.h"
+#include "drake/examples/quadrotor/quadrotor_plant.h"
 #include "drake/math/wrap_to.h"
 #include "drake/systems/analysis/simulator.h"
-//#include "drake/systems/framework/diagram_builder.h"
 #include "drake/systems/primitives/linear_system.h"
 #include "drake/systems/trajectory_optimization/admm_solver.h"
 #include "drake/systems/primitives/trajectory_source.h"
-//#include "drake/systems/trajectory_optimization/direct_collocation.h"
 #include "drake/systems/trajectory_optimization/midpoint_transcription.h"
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
@@ -25,28 +21,28 @@
 
 namespace drake {
     namespace examples {
-        namespace acrobot {
+        namespace quadrotor {
             namespace {
                 
                 typedef trajectories::PiecewisePolynomial<double> PiecewisePolynomialType;
                 
                 // system and context
-                AcrobotPlant<double>* acrobot = new AcrobotPlant<double>();
-                auto acrobot_context_ptr = acrobot->CreateDefaultContext();
+                QuadrotorPlant<double>* quadrotor = new QuadrotorPlant<double>();
+                auto quadrotor_context_ptr = quadrotor->CreateDefaultContext();
                 
                 // state start and end
-                const Eigen::VectorXd x0 = (Eigen::VectorXd(4) << 0, 0, 0, 0).finished();
-                const Eigen::VectorXd xf = (Eigen::VectorXd(4) << M_PI, 0, 0, 0).finished();
+                const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
                 
-                Eigen::VectorXd state_upper_bound(4);
-                Eigen::VectorXd state_lower_bound(4);
+                Eigen::VectorXd state_upper_bound(12);
+                Eigen::VectorXd state_lower_bound(12);
                 
-                double T = 5.0;
+                double T = 10.0;
                 int N = 40;
                 double dt = T/N;
                 
-                int num_states = acrobot_context_ptr->get_num_total_states();
-                int num_inputs = acrobot->get_input_port(0).size();
+                int num_states = quadrotor_context_ptr->get_num_total_states();
+                int num_inputs = quadrotor->get_input_port(0).size();
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
@@ -68,13 +64,13 @@ namespace drake {
                         Eigen::VectorXd input_value = (traj_u.value(dt * i) + traj_u.value(dt * (i+1)))/2;
                         
                         // calculate dynamics at midpoint
-                        acrobot_context_ptr->get_mutable_continuous_state().SetFromVector(state_value);
-                        auto input_port_value = &acrobot_context_ptr->FixInputPort(0, acrobot->AllocateInputVector(acrobot->get_input_port(0)));
+                        quadrotor_context_ptr->get_mutable_continuous_state().SetFromVector(state_value);
+                        auto input_port_value = &quadrotor_context_ptr->FixInputPort(0, quadrotor->AllocateInputVector(quadrotor->get_input_port(0)));
                         input_port_value->systems::FixedInputPortValue::GetMutableVectorData<double>()->SetFromVector(input_value);
                         
                         Eigen::MatrixXd midpoint_derivative;
-                        std::unique_ptr<systems::ContinuousState<double> > continuous_state(acrobot->AllocateTimeDerivatives());
-                        acrobot->CalcTimeDerivatives(*acrobot_context_ptr, continuous_state.get());
+                        std::unique_ptr<systems::ContinuousState<double> > continuous_state(quadrotor->AllocateTimeDerivatives());
+                        quadrotor->CalcTimeDerivatives(*quadrotor_context_ptr, continuous_state.get());
                         midpoint_derivative = continuous_state->CopyToVector();
                         
                         midpoint_error.col(i) = traj_x.value(dt * i) - (traj_x.value(dt * (i+1)) + dt * midpoint_derivative);
@@ -93,15 +89,15 @@ namespace drake {
                 
                 //assigns values to obstacles and state lower/upper bounds
                 void initialize() {
-                    //obstacle_center_x << 1.5, 1.5, 1.5, 3.5, 3.5, 3.5;
-                    //obstacle_center_y << 0.5, 2.5, 4.5, 1.5, 3.5, 5.5;
-                    //obstacle_radii << 0.5, 0.5, 0.5, 0.5, 0.5, 0.5;
+                    obstacle_center_x << 1.5, 1.5, 1.5, 3.5, 3.5, 3.5;
+                    obstacle_center_y << 0.5, 2.5, 4.5, 1.5, 3.5, 5.5;
+                    obstacle_radii << 0.5, 0.5, 0.5, 0.5, 0.5, 0.5;
                     
-                    //state_upper_bound << 100, 100, 100, 100, 0.2, 100, 100, 100, 100, 100, 100, 100;
-                    //state_lower_bound << -100, -100, -100, -100, -0.2, -100, -100, -100, -100, -100, -100, -100;
+                    state_upper_bound << 100, 100, 100, 100, 0.2, 100, 100, 100, 100, 100, 100, 100;
+                    state_lower_bound << -100, -100, -100, -100, -0.2, -100, -100, -100, -100, -100, -100, -100;
                     
-                    state_upper_bound << 100, 100, 100, 100;
-                    state_lower_bound << -100, -100, -100, -100;
+                    //state_upper_bound << 100, 100, 100, 100;
+                    //state_lower_bound << -100, -100, -100, -100;
                 }
                 
                 int writeTrajToFileTol(std::string filename, int trial, trajectories::PiecewisePolynomial<double> traj, int m, double time, double max_iter) {
@@ -153,7 +149,7 @@ namespace drake {
                 /*
                  void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                  
-                 double quad_L = acrobot->L();
+                 double quad_L = quadrotor->L();
                  
                  double right_side_x, right_side_y;
                  double left_side_x, left_side_y;
@@ -185,22 +181,23 @@ namespace drake {
                  dg_x(3 * i + 2, 2) = -2 * left_side_x * (-quad_L * sin(x[3])) - 2 * left_side_y * (quad_L * cos(x[3]));
                  }
                  } */ /*
-                void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
-                    
-                    for (int i = 0; i < obstacle_radii.size(); i++) {
-                        // entries of d
-                        g(i) = obstacle_radii[i] * obstacle_radii[i] - (obstacle_center_x[i] - x[0]) * (obstacle_center_x[i] - x[0]) - (obstacle_center_y[i] - x[1]) * (obstacle_center_y[i] - x[1]);
-                        
-                        // entries of dd
-                        dg_x(i, 0) = -2 * (x[0] - obstacle_center_x[i]);
-                        dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i]);
-                    }
-                } */
+                       void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                       
+                       for (int i = 0; i < obstacle_radii.size(); i++) {
+                       // entries of d
+                       g(i) = obstacle_radii[i] * obstacle_radii[i] - (obstacle_center_x[i] - x[0]) * (obstacle_center_x[i] - x[0]) - (obstacle_center_y[i] - x[1]) * (obstacle_center_y[i] - x[1]);
+                       
+                       // entries of dd
+                       dg_x(i, 0) = -2 * (x[0] - obstacle_center_x[i]);
+                       dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i]);
+                       }
+                       } */
                 
                 void solveSwingUpADMM(int trial, int max_iter) {
+
                     
                     // initialize solver
-                    systems::trajectory_optimization::AdmmSolver solver = systems::trajectory_optimization::AdmmSolver(acrobot, x0, xf, T, N, 400);
+                    systems::trajectory_optimization::AdmmSolver solver = systems::trajectory_optimization::AdmmSolver(quadrotor, x0, xf, T, N, 1000);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -221,8 +218,8 @@ namespace drake {
                     //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
                     
                     // add pitch constraint for consistency
-                    solver.setStateUpperBound(state_upper_bound);
-                    solver.setStateLowerBound(state_lower_bound);
+                    //solver.setStateUpperBound(state_upper_bound);
+                    //solver.setStateLowerBound(state_lower_bound);
                     
                     // start timer
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -239,14 +236,14 @@ namespace drake {
                     trajectories::PiecewisePolynomial<double> xtraj_admm = solver.reconstructStateTrajectory();
                     trajectories::PiecewisePolynomial<double> utraj_admm = solver.reconstructInputTrajectory();
                     
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_admm_x", trial, xtraj_admm, num_states, elapsed_time.count(), max_iter);
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_admm_u", trial, utraj_admm, num_inputs, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_admm_x", trial, xtraj_admm, num_states, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_admm_u", trial, utraj_admm, num_inputs, elapsed_time.count(), max_iter);
                     
-                    calculateIntegrationError("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_admm_x", trial, xtraj_admm, utraj_admm);
+                    calculateIntegrationError("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_admm_x", trial, xtraj_admm, utraj_admm);
                 }
                 
                 solvers::SolutionResult solveSwingUpIPOPT(int trial, int max_iter) {
-                    systems::trajectory_optimization::MidpointTranscription dircol(acrobot, *acrobot_context_ptr, N, T/N, T/N);
+                    systems::trajectory_optimization::MidpointTranscription dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     
                     dircol.AddEqualTimeIntervalsConstraints();
                     
@@ -255,8 +252,8 @@ namespace drake {
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
                     dircol.AddLinearConstraint(dircol.final_state() == xf);
                     
-                    const double R = 1;  // Cost on input "effort".
-                    //const Eigen::Matrix4d R = Eigen::MatrixXd::Identity(4, 4);
+                    //const double R = 1;  // Cost on input "effort".
+                    const Eigen::Matrix4d R = Eigen::MatrixXd::Identity(4, 4);
                     dircol.AddRunningCost(u.dot(R * u));
                     //dircol.AddRunningCost(u.dot() * u);
                     
@@ -269,10 +266,10 @@ namespace drake {
                     dircol.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set tolerance low so that it does not interfere with maximum iteration comparison?
-                    //dircol.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-16);
-                    //dircol.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", 1e-16);
-                    //dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-16);
-                    //dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", 1e-16);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-16);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", 1e-16);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-16);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", 1e-16);
                     
                     // set maximum iterations
                     //dircol.SetSolverOption(solvers::IpoptSolver::id(), "max_iter", max_iter);
@@ -288,8 +285,8 @@ namespace drake {
                     //}
                     
                     // constrain angle?
-                    dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
-                    dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
+                    //dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
+                    //dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
                     
                     solvers::IpoptSolver solver;
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -303,17 +300,17 @@ namespace drake {
                     trajectories::PiecewisePolynomial<double> xtraj_ipopt = dircol.ReconstructStateTrajectory();
                     trajectories::PiecewisePolynomial<double> utraj_ipopt = dircol.ReconstructInputTrajectory();
                     
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_ipopt_x", trial, xtraj_ipopt, num_states, elapsed_time.count(), max_iter);
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_ipopt_u", trial, utraj_ipopt, num_inputs, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_ipopt_x", trial, xtraj_ipopt, num_states, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_ipopt_u", trial, utraj_ipopt, num_inputs, elapsed_time.count(), max_iter);
                     
-                    calculateIntegrationError("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_ipopt_x", trial, xtraj_ipopt, utraj_ipopt);
+                    calculateIntegrationError("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_ipopt_x", trial, xtraj_ipopt, utraj_ipopt);
                     
                     return result;
                 }
                 
                 solvers::SolutionResult solveSwingUpSNOPT(int trial, int max_iter) {
                     cout << "\n-- Solving with SNOPT --" << endl;
-                    systems::trajectory_optimization::MidpointTranscription dircol(acrobot, *acrobot_context_ptr, N, T/N, T/N);
+                    systems::trajectory_optimization::MidpointTranscription dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     
                     dircol.AddEqualTimeIntervalsConstraints();
                     
@@ -324,8 +321,8 @@ namespace drake {
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
                     dircol.AddLinearConstraint(dircol.final_state() == xf);
                     
-                    const double R = 1;  // Cost on input "effort".
-                    //const Eigen::Matrix4d R = Eigen::MatrixXd::Identity(4, 4);
+                    //const double R = 1;  // Cost on input "effort".
+                    const Eigen::Matrix4d R = Eigen::MatrixXd::Identity(4, 4);
                     dircol.AddRunningCost(u.dot(R * u));
                     //dircol.AddRunningCost(u * u);
                     
@@ -339,8 +336,8 @@ namespace drake {
                     // THRUST SHOULD BE POSITIVE
                     
                     // constrain angle with upper/lower bounds
-                    dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
-                    dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
+                    //dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
+                    //dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
                     
                     const double timespan_init = T;
                     
@@ -351,8 +348,8 @@ namespace drake {
                     dircol.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set tolerance to be very small
-                    //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-10);
-                    //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-10);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-10);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-10);
                     
                     // set tolerance
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", max_iter);
@@ -360,7 +357,7 @@ namespace drake {
                     // verbose?
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major print level", 2);
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Print file", "snopt_output");
-                    const std::string print_file = "/Users/irina/Documents/drake/examples/acrobot/output/snopt" + std::to_string(trial) + ".out";
+                    const std::string print_file = "/Users/irina/Documents/drake/examples/quadrotor/output/snopt" + std::to_string(trial) + ".out";
                     cout << "Should be printing to " << print_file << endl;
                     dircol.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
                     
@@ -377,10 +374,10 @@ namespace drake {
                     trajectories::PiecewisePolynomial<double> xtraj_snopt = dircol.ReconstructStateTrajectory();
                     trajectories::PiecewisePolynomial<double> utraj_snopt = dircol.ReconstructInputTrajectory();
                     
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_snopt_x", trial, xtraj_snopt, num_states, elapsed_time.count(), max_iter);
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_snopt_u", trial, utraj_snopt, num_inputs, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_snopt_x", trial, xtraj_snopt, num_states, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_snopt_u", trial, utraj_snopt, num_inputs, elapsed_time.count(), max_iter);
                     
-                    calculateIntegrationError("/Users/irina/Documents/drake/examples/acrobot/output/acrobot_obstacles_snopt_x", trial, xtraj_snopt, utraj_snopt);
+                    calculateIntegrationError("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_snopt_x", trial, xtraj_snopt, utraj_snopt);
                     
                     return result;
                 }
@@ -391,7 +388,7 @@ namespace drake {
                     int max_iter = 400;
                     std::vector<solvers::SolutionResult> ipopt_results(1);
                     std::vector<solvers::SolutionResult> snopt_results(1);
-
+                    
                     solveSwingUpADMM(0, max_iter);
                     ipopt_results[0] = solveSwingUpIPOPT(0, max_iter);
                     snopt_results[0] = solveSwingUpSNOPT(0, max_iter);
@@ -400,13 +397,14 @@ namespace drake {
                 }
                 
             }  // namespace
-        }  // namespace acrobot
+        }  // namespace quadrotor
     }  // namespace examples
 }  // namespace drake
 
 int main(int argc, char* argv[]) {
-    return drake::examples::acrobot::do_main(argc, argv);
+    return drake::examples::quadrotor::do_main(argc, argv);
 }
+
 
 
 

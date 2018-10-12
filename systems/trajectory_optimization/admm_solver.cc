@@ -6,7 +6,6 @@
 
 using namespace std::chrono;
 using namespace std::placeholders;
-using namespace drake::systems::framework;
 
 namespace drake {
     namespace systems {
@@ -14,11 +13,16 @@ namespace drake {
             
             /* ---------------------------------------------- SOLVER INITIALIZATION ---------------------------------------------- */
             
-            AdmmSolver::AdmmSolver(System<double>* par_system, double* par_x0, double* par_xf, double par_T, int par_N, int par_max_iter) {
+            AdmmSolver::AdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter) {
                 
                 system = par_system;
                 context = system->CreateDefaultContext();
                 input_port_value = &context->FixInputPort(0, system->AllocateInputVector(system->get_input_port(0)));
+                
+                // create an autodiff version of the system and context
+                autodiff_system = drake::systems::System<double>::ToAutoDiffXd(*system);
+                autodiff_context = autodiff_system->CreateDefaultContext();
+                autodiff_context->SetTimeStateAndParametersFrom(*context);
                 
                 initial_rho1 = 500;
                 initial_rho2 = 10000;
@@ -31,17 +35,19 @@ namespace drake {
                 rho1_min = 100;
                 
                 num_states = context->get_num_total_states();
-                num_inputs = context->get_num_input_ports();
+                num_inputs = system->get_input_port(0).size();
                 
                 costQ = Eigen::MatrixXd::Zero(num_states, num_states);
                 costR = Eigen::MatrixXd::Identity(num_inputs, num_inputs);
-                
+                /*
                 x0 = Eigen::VectorXd(num_states);
                 xf = Eigen::VectorXd(num_states);
                 for (int i = 0; i < num_states; i++) {
                     x0[i] = par_x0[i];
                     xf[i] = par_xf[i];
-                }
+                } */
+                x0 = Eigen::VectorXd(par_x0);
+                xf = Eigen::VectorXd(par_xf);
                 
                 num_constraints = 0;
                 
@@ -192,6 +198,26 @@ namespace drake {
                 return trajectories::PiecewisePolynomial<double>::FirstOrderHold(times_vec, inputs);
             }
             
+            void AdmmSolver::addInequalityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name) {
+                // make individual constraint structure
+                struct constraint_function_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
+                
+                // put onto overall constraint list
+                constraints_list.push_back(cf);
+                constraint_flag_list.push_back(INEQUALITY); // NOT SURE THIS IS USED
+                num_constraints = num_constraints + constraint_size;
+            }
+            
+            void AdmmSolver::addEqualityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name) {
+                // make individual constraint structure
+                struct constraint_function_struct cf = {f, EQUALITY, constraint_size, constraint_name};
+                
+                // put onto overall constraint list
+                constraints_list.push_back(cf);
+                constraint_flag_list.push_back(EQUALITY); // NOT SURE THIS IS USED
+                num_constraints = num_constraints + constraint_size;
+            }
+            
             
             /* ---------------------------------------------- SOLVE METHOD ---------------------------------------------- */
             
@@ -294,19 +320,38 @@ namespace drake {
                         }
                         
                         // set context to midpoint value
-                        context->get_mutable_continuous_state().SetFromVector(mid_state);
-                        input_port_value->GetMutableVectorData<double>()->SetFromVector(mid_input);
+                        //context->get_mutable_continuous_state().SetFromVector(mid_state);
+                        //input_port_value->GetMutableVectorData<double>()->SetFromVector(mid_input);
+                        
+                        // set x and u
+                        auto autodiff_args = math::initializeAutoDiffTuple(mid_state, mid_input);
+                        
+                        autodiff_context->get_mutable_continuous_state_vector().SetFromVector(std::get<0>(autodiff_args));
+                        autodiff_context->FixInputPort(0, std::get<1>(autodiff_args));
                         
                         // calculate f and df from dynamics function pointer
                         admm_dynamics_time_start = std::chrono::system_clock::now();
-                        auto affine_system = FirstOrderTaylorApproximation(*system, *context);
+                        
+                        // calculate first- and second- order derivatives
+                        std::unique_ptr<ContinuousState<AutoDiffXd>> autodiff_xdot = autodiff_system->AllocateTimeDerivatives();
+                        autodiff_system->CalcTimeDerivatives(*autodiff_context, autodiff_xdot.get());
+                        auto autodiff_xdot_vec = autodiff_xdot->CopyToVector();
+                        
+                        // get first- and second- order derivatives
+                        f[ii] = math::autoDiffToValueMatrix(autodiff_xdot_vec);
+                        const Eigen::MatrixXd AB = math::autoDiffToGradientMatrix(autodiff_xdot_vec);
+                        A[ii] = AB.leftCols(num_states);
+                        B[ii] = AB.rightCols(num_inputs);
+                        
                         admm_dynamics_time_end = std::chrono::system_clock::now();
                         
                         admm_dynamics_timer = admm_dynamics_timer + (duration_cast<duration<double>>(admm_dynamics_time_end - admm_dynamics_time_start)).count();
                         
-                        f[ii] = affine_system->f0() + affine_system->A() * mid_state + affine_system->B() * mid_input;
-                        A[ii] = affine_system->A();
-                        B[ii] = affine_system->B();
+                        //auto affine_system = FirstOrderTaylorApproximation(*system, *context);
+                        //auto autodiff_args = math::initializeAutoDiffTuple(mid_state, mid_input);
+                        //f[ii] = affine_system->f0() + affine_system->A() * mid_state + affine_system->B() * mid_input;
+                        //A[ii] = affine_system->A();
+                        //B[ii] = affine_system->B();
                         
                         // put in correct place in large M matrix
                         placeAinM(&tripletsM, A[ii], ii);
@@ -445,6 +490,7 @@ namespace drake {
             /* ---------------------------------------------- FUNCTIONS ---------------------------------------------- */
             
             // really naive implementation... whatever
+            /*
             int AdmmSolver::nonzeroCount(Eigen::Ref<Eigen::MatrixXd> A) {
                 int count = 0;
                 for (int i = 0; i < A.rows(); i++) {
@@ -455,7 +501,7 @@ namespace drake {
                     }
                 }
                 return count;
-            }
+            } */
             
             
             // FIRST PROXIMAL UPDATE
@@ -471,6 +517,7 @@ namespace drake {
                 Eigen::MatrixXd Gt = G.transpose();
                 
                 Eigen::MatrixXd temp = 2 * rho2 * Mt * M + 2 * rho3 * Gt * G + rho1 * Eigen::MatrixXd::Identity(M.cols(), M.cols());
+                //std::cout << "Size of matrix being inverted: " << temp.size() << endl;
                 return temp.llt().solve(2 * rho2 * Mt * c + 2 * rho3 * Gt * h + rho1 * nu);
             }
             
@@ -575,7 +622,7 @@ namespace drake {
                 dg_x = Eigen::MatrixXd::Zero(num_inputs, num_states);
                 dg_u = -1 * Eigen::MatrixXd::Identity(num_inputs, num_inputs);
             }
-            
+            /*
             void AdmmSolver::stateInputConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> x_upper_bound, Eigen::Ref<Eigen::VectorXd> x_lower_bound, Eigen::Ref<Eigen::VectorXd> u_upper_bound, Eigen::Ref<Eigen::VectorXd> u_lower_bound, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
                 
                 int nn = num_states + num_inputs;
@@ -589,7 +636,7 @@ namespace drake {
                 // entries of dg
                 dg.block(0, 0, nn, nn) = -1 * Eigen::MatrixXd::Identity(nn, nn);
                 dg.block(nn, 0, nn, nn) = Eigen::MatrixXd::Identity(nn, nn);
-            }
+            } */
             
             /*
              // OBSTACLE CONSTRAINTS
@@ -708,7 +755,7 @@ namespace drake {
             }
             
             int main(int argc, char* argv[]) {
-                gflags::ParseCommandLineFlags(&argc, &argv, true);
+                //gflags::ParseCommandLineFlags(&argc, &argv, true);
                 return 0;
             }
             

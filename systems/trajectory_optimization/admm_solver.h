@@ -2,11 +2,17 @@
 #include <iostream>
 #include <chrono>
 #include <Eigen/Eigen>
+#include <functional>
 
 #include "drake/systems/framework/system.h"
 #include "drake/systems/framework/context.h"
 #include "drake/systems/primitives/trajectory_source.h"
 #include "drake/common/trajectories/piecewise_polynomial.h"
+#include "drake/systems/primitives/linear_system.h"
+#include "drake/math/autodiff.h"
+#include "drake/math/autodiff_gradient.h"
+#include "drake/common/autodiff.h"
+#include "drake/common/eigen_types.h"
 
 using namespace std;
 using namespace Eigen;
@@ -15,7 +21,18 @@ namespace drake {
 namespace systems {
 namespace trajectory_optimization {
             
-enum constraint_type {EQUALITY, INEQUALITY};
+enum constraint_flag {EQUALITY, INEQUALITY};
+    
+//typedef void (*constraint_function) (double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
+typedef std::function<void(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>)> constraint_function;
+
+struct constraint_function_struct {
+    constraint_function function;
+    constraint_flag flag;
+    int length;
+    std::string constraint_name;
+};
+
 
 typedef void (*function_pointer)(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
 
@@ -26,9 +43,13 @@ private:
     double T; // total time
     double dt; // time step
     
-    System<double>* system; // main dynamical system
-    std::unique_ptr<Context<double> > context; // context for system
+    systems::System<double>* system; // main dynamical system
+    std::unique_ptr<systems::Context<double> > context; // context for system
     FixedInputPortValue* input_port_value;
+    
+    // autodiff versions
+    std::unique_ptr<System<AutoDiffXd>> autodiff_system;
+    std::unique_ptr<Context<AutoDiffXd>> autodiff_context;
     
     double initial_rho1; // proximal parameter
     double initial_rho2; // weight on feasibility quadratic cost
@@ -49,6 +70,11 @@ private:
     // function handle to a Matlab function that evaluates all constraints
     // function handle to a Matlab function that evaluates dynamics
     int num_constraints;
+    std::vector<constraint_function_struct> constraints_list;
+    std::vector<constraint_flag> constraint_flag_list;
+    void addInequalityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
+    void addEqualityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
+    
     Eigen::VectorXd x_lower_bound;
     Eigen::VectorXd x_upper_bound;
     Eigen::VectorXd u_lower_bound;
@@ -67,12 +93,15 @@ private:
     double tol_constraints; // tolerance on satisfaction of all other constraints
     double tol_objective; // tolerance on objective minimization (?)
     int max_iter; // maximum number of iterations
+    
     bool solve_flag;
+    Eigen::MatrixXd solution_x;
+    Eigen::MatrixXd solution_u;
     
     /* --------- functions --------- */
 public:
     // constructor:
-    AdmmSolver(System<double>* par_system, double* par_x0, double* par_xf, double par_T, int par_N, int par_max_iter);
+    AdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter);
     
     // typedef for dynamics function pointer
     //typedef void (*function_pointer)(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
@@ -96,6 +125,7 @@ public:
     void setCostMatrices(Eigen::MatrixXd Q, Eigen::MatrixXd R);
     void addEqualityConstraint();
     void addInequalityConstraint();
+    void addConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
     
     // dynamics for testing
     static void quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii);
@@ -110,15 +140,20 @@ private:
     void integratorDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> mid_state, Eigen::Ref<Eigen::VectorXd> mid_input, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii);
     //void quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii);
     
-    void placeAinM(std::vector<Triplet<double> >* tripletsM, Eigen::Ref<Eigen::MatrixXd> Aii, int ii, double dt);
-    void placeBinM(std::vector<Triplet<double> >* tripletsM, Eigen::Ref<Eigen::MatrixXd> Bii, int ii, double dt);
+    void placeAinM(std::vector<Triplet<double> >* tripletsM, Eigen::Ref<Eigen::MatrixXd> Aii, int ii);
+    void placeBinM(std::vector<Triplet<double> >* tripletsM, Eigen::Ref<Eigen::MatrixXd> Bii, int ii);
+    void placeinG(std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> single_dg_x, Eigen::Ref<Eigen::MatrixXd> single_dg_u, int ii, int running_constraint_counter, int cf_length);
     
     void makeCVector(Eigen::Ref<Eigen::VectorXd> c, int ii, Eigen::Ref<Eigen::VectorXd> mid_state, Eigen::Ref<Eigen::VectorXd> mid_input, Eigen::Ref<Eigen::VectorXd> fii, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii, Eigen::Ref<Eigen::VectorXd> y);
     
     Eigen::VectorXd proximalUpdateObjective(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::MatrixXd> R, double rho1);
-    Eigen::VectorXd proximalUpdateConstraints(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::SparseMatrix<double> > M, Eigen::Ref<Eigen::VectorXd> c, double rho1, double rho2);
+    Eigen::VectorXd proximalUpdateConstraints(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::SparseMatrix<double> > M, Eigen::Ref<Eigen::VectorXd> c,  Eigen::Ref<Eigen::SparseMatrix<double> > G, Eigen::Ref<Eigen::VectorXd> h, double rho1, double rho2, double rho3);
     
-    
+    // upper and lower bounds (private functions)
+    void inputLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
+    void inputUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
+    void stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
+    void stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
 };
         
         } // namespace trajectory_optimization
