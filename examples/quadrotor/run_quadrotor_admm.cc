@@ -14,6 +14,7 @@
 #include "drake/systems/trajectory_optimization/admm_solver.h"
 #include "drake/systems/primitives/trajectory_source.h"
 #include "drake/systems/trajectory_optimization/midpoint_transcription.h"
+#include "drake/systems/trajectory_optimization/direct_collocation.h"
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
 
@@ -218,8 +219,8 @@ namespace drake {
                     //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
                     
                     // add pitch constraint for consistency
-                    //solver.setStateUpperBound(state_upper_bound);
-                    //solver.setStateLowerBound(state_lower_bound);
+                    solver.setStateUpperBound(state_upper_bound);
+                    solver.setStateLowerBound(state_lower_bound);
                     
                     // start timer
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -243,7 +244,8 @@ namespace drake {
                 }
                 
                 solvers::SolutionResult solveSwingUpIPOPT(int trial, int max_iter) {
-                    systems::trajectory_optimization::MidpointTranscription dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
+                    //systems::trajectory_optimization::MidpointTranscription dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
+                    systems::trajectory_optimization::DirectCollocation dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     
                     dircol.AddEqualTimeIntervalsConstraints();
                     
@@ -266,10 +268,10 @@ namespace drake {
                     dircol.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set tolerance low so that it does not interfere with maximum iteration comparison?
-                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-16);
-                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", 1e-16);
-                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-16);
-                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", 1e-16);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-10);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", 1e-10);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-10);
+                    dircol.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", 1e-10);
                     
                     // set maximum iterations
                     //dircol.SetSolverOption(solvers::IpoptSolver::id(), "max_iter", max_iter);
@@ -285,8 +287,8 @@ namespace drake {
                     //}
                     
                     // constrain angle?
-                    //dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
-                    //dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
+                    dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
+                    dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
                     
                     solvers::IpoptSolver solver;
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -310,6 +312,7 @@ namespace drake {
                 
                 solvers::SolutionResult solveSwingUpSNOPT(int trial, int max_iter) {
                     cout << "\n-- Solving with SNOPT --" << endl;
+                    //systems::trajectory_optimization::MidpointTranscription dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     systems::trajectory_optimization::MidpointTranscription dircol(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     
                     dircol.AddEqualTimeIntervalsConstraints();
@@ -336,8 +339,8 @@ namespace drake {
                     // THRUST SHOULD BE POSITIVE
                     
                     // constrain angle with upper/lower bounds
-                    //dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
-                    //dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
+                    dircol.AddConstraintToAllKnotPoints(x <= state_upper_bound);
+                    dircol.AddConstraintToAllKnotPoints(x >= state_lower_bound);
                     
                     const double timespan_init = T;
                     
