@@ -172,10 +172,35 @@ drake_cc_binary(
         "//common:find_resource",
         "//lcm",
         "//multibody:rigid_body_tree",
-        "//systems/analysis",
-        "//systems/controllers:linear_quadratic_regulator",
+        "//systems/analysis:simulator",
+        "//systems/framework:diagram_builder",
+        "//systems/primitives:linear_system",
         "//systems/primitives:trajectory_source",
         "//systems/trajectory_optimization:direct_collocation",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:admm_solver",
+        "//solvers:snopt_solver",
+        "//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
+
+
+drake_cc_binary(
+    name = "run_acrobot_admm",
+    srcs = ["run_acrobot_admm.cc"],
+    deps = [
+        ":acrobot_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/primitives:trajectory_source",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:admm_solver",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
         "@gflags",
     ],
 )

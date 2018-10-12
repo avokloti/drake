@@ -19,6 +19,8 @@ drake_cc_package_library(
         ":joint_limit_constraint_force_evaluator",
         ":multiple_shooting",
         ":position_constraint_force_evaluator",
+	":midpoint_transcription",
+	":admm_solver",
     ],
 )
 
@@ -96,6 +98,41 @@ drake_cc_library(
         "//math:gradient",
         "//systems/primitives:linear_system",
         "//systems/primitives:piecewise_polynomial_linear_system",
+    ],
+)
+
+drake_cc_library(
+    name = "midpoint_transcription",
+    srcs = [
+        "midpoint_transcription.cc",
+    ],
+    hdrs = [
+        "midpoint_transcription.h",
+    ],
+    deps = [
+        ":multiple_shooting",
+        "//math:autodiff",
+        "//math:gradient",
+    ],
+)
+
+drake_cc_library(
+    name = "admm_solver",
+    srcs = [
+        "admm_solver.cc",
+    ],
+    hdrs = [
+        "admm_solver.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
     ],
 )
 
