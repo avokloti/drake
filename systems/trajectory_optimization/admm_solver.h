@@ -72,8 +72,6 @@ private:
     int num_constraints;
     std::vector<constraint_function_struct> constraints_list;
     std::vector<constraint_flag> constraint_flag_list;
-    void addInequalityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
-    void addEqualityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
     
     Eigen::VectorXd x_lower_bound;
     Eigen::VectorXd x_upper_bound;
@@ -125,7 +123,9 @@ public:
     void setCostMatrices(Eigen::MatrixXd Q, Eigen::MatrixXd R);
     void addEqualityConstraint();
     void addInequalityConstraint();
-    void addConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
+    //void addConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
+    void addInequalityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
+    void addEqualityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
     
     // dynamics for testing
     static void quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii);
