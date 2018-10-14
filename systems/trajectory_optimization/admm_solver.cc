@@ -92,12 +92,12 @@ namespace drake {
                 x_upper_bound = bound;
                 
                 // make constraint (uses lambda to bind "this" object to the member function)
-                constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                struct constraint_function_struct cf = {f, INEQUALITY, num_states, "stateUpperBound"};
+                single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
+                struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateUpperBound"};
                 
                 // add constraint to list
-                constraints_list.push_back(cf);
-                constraint_flag_list.insert(constraint_flag_list.end(), num_states, INEQUALITY);
+                single_constraints_list.push_back(cf);
+                //constraint_flag_list.insert(constraint_flag_list.end(), num_states, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_states;
@@ -110,12 +110,12 @@ namespace drake {
                 x_lower_bound = bound;
                 
                 // make constraint
-                constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                struct constraint_function_struct cf = {f, INEQUALITY, num_states, "stateLowerBound"};
+                single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
+                struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateLowerBound"};
                 
                 // add constraint to list
-                constraints_list.push_back(cf);
-                constraint_flag_list.insert(constraint_flag_list.end(), num_states, INEQUALITY);
+                single_constraints_list.push_back(cf);
+                //constraint_flag_list.insert(constraint_flag_list.end(), num_states, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_states;
@@ -128,12 +128,12 @@ namespace drake {
                 u_upper_bound = bound;
                 
                 // make constraint
-                constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                struct constraint_function_struct cf = {f, INEQUALITY, num_inputs, "inputUpperBound"};
+                single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
+                struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputUpperBound"};
                 
                 // add constraint to list
-                constraints_list.push_back(cf);
-                constraint_flag_list.insert(constraint_flag_list.end(), num_inputs, INEQUALITY);
+                single_constraints_list.push_back(cf);
+                //constraint_flag_list.insert(constraint_flag_list.end(), num_inputs, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_inputs;
@@ -146,12 +146,12 @@ namespace drake {
                 u_lower_bound = bound;
                 
                 // make constraint
-                constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                struct constraint_function_struct cf = {f, INEQUALITY, num_inputs, "inputLowerBound"};
+                single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
+                struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputLowerBound"};
                 
                 // add constraint to list
-                constraints_list.push_back(cf);
-                constraint_flag_list.insert(constraint_flag_list.end(), num_inputs, INEQUALITY);
+                single_constraints_list.push_back(cf);
+                //constraint_flag_list.insert(constraint_flag_list.end(), num_inputs, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_inputs;
@@ -198,25 +198,46 @@ namespace drake {
                 return trajectories::PiecewisePolynomial<double>::FirstOrderHold(times_vec, inputs);
             }
             
-            void AdmmSolver::addInequalityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name) {
+            void AdmmSolver::addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                 // make individual constraint structure
-                struct constraint_function_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
+                struct single_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
                 
                 // put onto overall constraint list
-                constraints_list.push_back(cf);
-                constraint_flag_list.push_back(INEQUALITY); // NOT SURE THIS IS USED
+                single_constraints_list.push_back(cf);
+                //constraint_flag_list.push_back(INEQUALITY); // NOT SURE THIS IS USED
                 num_constraints = num_constraints + constraint_size;
             }
             
-            void AdmmSolver::addEqualityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name) {
+            void AdmmSolver::addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                 // make individual constraint structure
-                struct constraint_function_struct cf = {f, EQUALITY, constraint_size, constraint_name};
+                struct single_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name};
                 
                 // put onto overall constraint list
-                constraints_list.push_back(cf);
-                constraint_flag_list.push_back(EQUALITY); // NOT SURE THIS IS USED
+                single_constraints_list.push_back(cf);
+                //constraint_flag_list.push_back(EQUALITY); // NOT SURE THIS IS USED
                 num_constraints = num_constraints + constraint_size;
             }
+            
+            void AdmmSolver::addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
+                // make individual constraint structure
+                struct double_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
+                
+                // put onto overall constraint list
+                double_constraints_list.push_back(cf);
+                //constraint_flag_list.push_back(INEQUALITY); // NOT SURE THIS IS USED
+                num_constraints = num_constraints + constraint_size;
+            }
+            
+            void AdmmSolver::addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
+                // make individual constraint structure
+                struct double_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name};
+                
+                // put onto overall constraint list
+                double_constraints_list.push_back(cf);
+                //constraint_flag_list.push_back(EQUALITY); // NOT SURE THIS IS USED
+                num_constraints = num_constraints + constraint_size;
+            }
+
             
             
             /* ---------------------------------------------- SOLVE METHOD ---------------------------------------------- */
@@ -226,7 +247,7 @@ namespace drake {
                 /* --- allocate memory --- */
                 std::cout << "Before solve starts...\n";
                 std::cout << "num constraints per point = " << num_constraints << "\n";
-                std::cout << "constraints list length = " << constraints_list.size() << "\n";
+                std::cout << "constraints list length = " << single_constraints_list.size() << "\n";
                 
                 // allocate array for x, y, lambda
                 Eigen::VectorXd x(y);
@@ -373,6 +394,7 @@ namespace drake {
                     M.setFromTriplets(tripletsM.begin(), tripletsM.end());
                     //std::cout << "\n";
                     
+                    /*
                     for (int ii = 0; ii < N; ii++) {
                         // get current state/input
                         Eigen::VectorXd state = y.segment(ii * num_states, num_states);
@@ -381,9 +403,46 @@ namespace drake {
                         
                         int running_constraint_counter = 0;
                         
-                        for (int iii = 0; iii < int(constraints_list.size()); iii++) {
+                        for (int iii = 0; iii < int(single_constraints_list.size()); iii++) {
                             // get constraint function
-                            constraint_function_struct cf = constraints_list.at(iii);
+                            single_constraint_struct cf = single_constraints_list.at(iii);
+                            
+                            // prepare matrices (OPTIMIZE LATER)
+                            Eigen::VectorXd single_g = Eigen::VectorXd::Zero(cf.length);
+                            Eigen::MatrixXd single_dg_x = Eigen::MatrixXd::Zero(cf.length, num_states);
+                            Eigen::MatrixXd single_dg_u = Eigen::MatrixXd::Zero(cf.length, num_inputs);
+                            
+                            // evaluate constraints
+                            cf.function(ii, state, input, single_g, single_dg_x, single_dg_u);
+                            
+                            if (cf.flag == INEQUALITY) {
+                                for (int iiii = 0; iiii < cf.length; iiii++) {
+                                    if (single_g[iiii] <= 0) {
+                                        single_g[iiii] = 0;
+                                        single_dg_x.block(iiii, 0, 1, num_states) = 0 * single_dg_x.block(iiii, 0, 1, num_states);
+                                        single_dg_u.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u.block(iiii, 0, 1, num_inputs);
+                                    }
+                                }
+                            }
+                            
+                            g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
+                            placeinG(&tripletsG, single_dg_x, single_dg_u, ii, running_constraint_counter, cf.length);
+                            
+                            running_constraint_counter = running_constraint_counter + cf.length;
+                        }
+                    } */
+                    
+                    int running_constraint_counter = 0;
+                    
+                    for (int iii = 0; iii < int(single_constraints_list.size()); iii++) {
+                        // get constraint function
+                        single_constraint_struct cf = single_constraints_list.at(iii);
+                        
+                        // iterate and apply constraint to all points
+                        for (int ii = 0; ii < N; ii++) {
+                            // get current state/input
+                            Eigen::VectorXd state = y.segment(ii * num_states, num_states);
+                            Eigen::VectorXd input = y.segment(N * num_states + ii * num_inputs, num_inputs);
                             
                             // prepare matrices (OPTIMIZE LATER)
                             Eigen::VectorXd single_g = Eigen::VectorXd::Zero(cf.length);
@@ -409,10 +468,56 @@ namespace drake {
                             running_constraint_counter = running_constraint_counter + cf.length;
                         }
                     }
+                    
+                    for (int iii = 0; iii < int(double_constraints_list.size()); iii++) {
+                        // get constraint function
+                        double_constraint_struct cf = double_constraints_list.at(iii);
+                        
+                        for (int ii = 0; ii < N-1; ii++) {
+                            // get current state/input
+                            Eigen::VectorXd state1 = y.segment(ii * num_states, num_states);
+                            Eigen::VectorXd input1 = y.segment(N * num_states + ii * num_inputs, num_inputs);
+                            
+                            // get next state/input
+                            Eigen::VectorXd state2 = y.segment((ii+1) * num_states, num_states);
+                            Eigen::VectorXd input2 = y.segment(N * num_states + (ii+1) * num_inputs, num_inputs);
+                            
+                            // prepare matrices (OPTIMIZE LATER)
+                            Eigen::VectorXd single_g = Eigen::VectorXd::Zero(cf.length);
+                            Eigen::MatrixXd single_dg_x1 = Eigen::MatrixXd::Zero(cf.length, num_states);
+                            Eigen::MatrixXd single_dg_u1 = Eigen::MatrixXd::Zero(cf.length, num_inputs);
+                            Eigen::MatrixXd single_dg_x2 = Eigen::MatrixXd::Zero(cf.length, num_states);
+                            Eigen::MatrixXd single_dg_u2 = Eigen::MatrixXd::Zero(cf.length, num_inputs);
+                            
+                            // evaluate constraints
+                            cf.function(ii, state1, input1, state2, input2, single_g, single_dg_x1, single_dg_u1, single_dg_x2, single_dg_u2);
+                            
+                            if (cf.flag == INEQUALITY) {
+                                for (int iiii = 0; iiii < cf.length; iiii++) {
+                                    if (single_g[iiii] <= 0) {
+                                        single_g[iiii] = 0;
+                                        single_dg_x1.block(iiii, 0, 1, num_states) = 0 * single_dg_x1.block(iiii, 0, 1, num_states);
+                                        single_dg_u1.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u1.block(iiii, 0, 1, num_inputs);
+                                        single_dg_x2.block(iiii, 0, 1, num_states) = 0 * single_dg_x2.block(iiii, 0, 1, num_states);
+                                        single_dg_u2.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u2.block(iiii, 0, 1, num_inputs);
+                                    }
+                                }
+                            }
+                            
+                            g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
+                            placeinG(&tripletsG, single_dg_x1, single_dg_u1, ii, running_constraint_counter, cf.length);
+                            placeinG(&tripletsG, single_dg_x2, single_dg_u2, ii+1, running_constraint_counter, cf.length);
+                            
+                            running_constraint_counter = running_constraint_counter + cf.length;
+                        }
+                    }
+                     
                     G.setFromTriplets(tripletsG.begin(), tripletsG.end());
                     
-                    //std::cout << "\nG:\n" << G << "\n";
-                    //std::cout << "g:\n" << g << "\n";
+                    std::cout << G << endl;
+                    //std::cout << "\nG rows and cols:\n" << G.rows() << " " << G.cols() << "\n";
+                    //std::cout << "\nG block:\n" << G.block(num_constraints, num_states, num_constraints, 2 * num_states) << "\n";
+                    std::cout << "g:\n" << g << "\n";
                     
                     h = G * y - g;
                     

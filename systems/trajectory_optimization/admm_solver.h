@@ -22,19 +22,29 @@ namespace systems {
 namespace trajectory_optimization {
             
 enum constraint_flag {EQUALITY, INEQUALITY};
-    
-//typedef void (*constraint_function) (double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
-typedef std::function<void(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>)> constraint_function;
 
-struct constraint_function_struct {
-    constraint_function function;
+//typedef void (*function_pointer)(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
+//typedef void (*constraint_function) (double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
+
+typedef std::function<void(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>)> single_constraint_function;
+    
+typedef std::function<void(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>)> double_constraint_function;
+
+struct single_constraint_struct {
+    single_constraint_function function;
+    constraint_flag flag;
+    int length;
+    std::string constraint_name;
+};
+    
+struct double_constraint_struct {
+    double_constraint_function function;
     constraint_flag flag;
     int length;
     std::string constraint_name;
 };
 
-
-typedef void (*function_pointer)(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
+    
 
 class AdmmSolver {
     /* --------- fields --------- */
@@ -66,12 +76,13 @@ private:
     Eigen::MatrixXd costR; // u' R u term
     
     // function pointers
-    function_pointer dynamics;
+    //function_pointer dynamics;
     // function handle to a Matlab function that evaluates all constraints
     // function handle to a Matlab function that evaluates dynamics
     int num_constraints;
-    std::vector<constraint_function_struct> constraints_list;
-    std::vector<constraint_flag> constraint_flag_list;
+    std::vector<single_constraint_struct> single_constraints_list;
+    std::vector<double_constraint_struct> double_constraints_list;
+    //std::vector<constraint_flag> constraint_flag_list;
     
     Eigen::VectorXd x_lower_bound;
     Eigen::VectorXd x_upper_bound;
@@ -124,8 +135,10 @@ public:
     void addEqualityConstraint();
     void addInequalityConstraint();
     //void addConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
-    void addInequalityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
-    void addEqualityConstraintToAllKnotPoints(constraint_function f, int constraint_size, std::string constraint_name);
+    void addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name);
+    void addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name);
+    void addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name);
+    void addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name);
     
     // dynamics for testing
     static void quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii);
