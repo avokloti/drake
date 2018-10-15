@@ -39,13 +39,7 @@ namespace drake {
                 
                 costQ = Eigen::MatrixXd::Zero(num_states, num_states);
                 costR = Eigen::MatrixXd::Identity(num_inputs, num_inputs);
-                /*
-                x0 = Eigen::VectorXd(num_states);
-                xf = Eigen::VectorXd(num_states);
-                for (int i = 0; i < num_states; i++) {
-                    x0[i] = par_x0[i];
-                    xf[i] = par_xf[i];
-                } */
+                
                 x0 = Eigen::VectorXd(par_x0);
                 xf = Eigen::VectorXd(par_xf);
                 
@@ -97,7 +91,6 @@ namespace drake {
                 
                 // add constraint to list
                 single_constraints_list.push_back(cf);
-                //constraint_flag_list.insert(constraint_flag_list.end(), num_states, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_states;
@@ -115,7 +108,6 @@ namespace drake {
                 
                 // add constraint to list
                 single_constraints_list.push_back(cf);
-                //constraint_flag_list.insert(constraint_flag_list.end(), num_states, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_states;
@@ -133,7 +125,6 @@ namespace drake {
                 
                 // add constraint to list
                 single_constraints_list.push_back(cf);
-                //constraint_flag_list.insert(constraint_flag_list.end(), num_inputs, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_inputs;
@@ -151,10 +142,17 @@ namespace drake {
                 
                 // add constraint to list
                 single_constraints_list.push_back(cf);
-                //constraint_flag_list.insert(constraint_flag_list.end(), num_inputs, INEQUALITY);
                 
                 // increment overall constraint counter
                 num_constraints = num_constraints + num_inputs;
+            }
+            
+            Eigen::MatrixXd AdmmSolver::getSolutionStateTrajectory() {
+                return solution_x;
+            }
+            
+            Eigen::MatrixXd AdmmSolver::getSolutionInputTrajectory() {
+                return solution_u;
             }
             
             trajectories::PiecewisePolynomial<double> AdmmSolver::reconstructStateTrajectory() {
@@ -204,7 +202,6 @@ namespace drake {
                 
                 // put onto overall constraint list
                 single_constraints_list.push_back(cf);
-                //constraint_flag_list.push_back(INEQUALITY); // NOT SURE THIS IS USED
                 num_constraints = num_constraints + constraint_size;
             }
             
@@ -214,7 +211,6 @@ namespace drake {
                 
                 // put onto overall constraint list
                 single_constraints_list.push_back(cf);
-                //constraint_flag_list.push_back(EQUALITY); // NOT SURE THIS IS USED
                 num_constraints = num_constraints + constraint_size;
             }
             
@@ -224,7 +220,6 @@ namespace drake {
                 
                 // put onto overall constraint list
                 double_constraints_list.push_back(cf);
-                //constraint_flag_list.push_back(INEQUALITY); // NOT SURE THIS IS USED
                 num_constraints = num_constraints + constraint_size;
             }
             
@@ -234,7 +229,6 @@ namespace drake {
                 
                 // put onto overall constraint list
                 double_constraints_list.push_back(cf);
-                //constraint_flag_list.push_back(EQUALITY); // NOT SURE THIS IS USED
                 num_constraints = num_constraints + constraint_size;
             }
 
@@ -243,6 +237,9 @@ namespace drake {
             /* ---------------------------------------------- SOLVE METHOD ---------------------------------------------- */
             
             void AdmmSolver::solve(Eigen::Ref<Eigen::VectorXd> y) {
+                
+                std::cout << "num states (in ADMM): " << num_states << endl;
+                std::cout << "num inputs (in ADMM): " << num_inputs << endl;
                 
                 /* --- allocate memory --- */
                 std::cout << "Before solve starts...\n";
@@ -253,9 +250,7 @@ namespace drake {
                 Eigen::VectorXd x(y);
                 Eigen::VectorXd lambda = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
                 
-                //cout << "x:\n" << x << "\n";
-                //cout << "y:\n" << x << "\n";
-                
+                // initialize solution vectors
                 solution_x = Eigen::MatrixXd::Zero(num_states, N);
                 solution_u = Eigen::MatrixXd::Zero(num_inputs, N);
                 
@@ -277,7 +272,6 @@ namespace drake {
                 
                 // allocate array for G
                 std::vector<Triplet<double> > tripletsG;
-                //tripletsG.reserve(N * num_constraints * (num_states + num_inputs));
                 Eigen::SparseMatrix<double> G(N * num_constraints, N * (num_states + num_inputs));
                 
                 // allocate array for c
@@ -318,6 +312,7 @@ namespace drake {
                 Eigen::VectorXd point_g = Eigen::VectorXd::Zero(num_constraints);
                 Eigen::MatrixXd point_dg_x = Eigen::MatrixXd::Zero(num_constraints, num_states);
                 Eigen::MatrixXd point_dg_u = Eigen::MatrixXd::Zero(num_constraints, num_inputs);
+                ofstream output_G; // for debugging
                 
                 // set rho's to initial values
                 double rho1 = initial_rho1;
@@ -340,10 +335,6 @@ namespace drake {
                             mid_input[iii] = 0.5 * (getInputFromY(y, ii, iii) + getInputFromY(y, ii+1, iii));
                         }
                         
-                        // set context to midpoint value
-                        //context->get_mutable_continuous_state().SetFromVector(mid_state);
-                        //input_port_value->GetMutableVectorData<double>()->SetFromVector(mid_input);
-                        
                         // set x and u
                         auto autodiff_args = math::initializeAutoDiffTuple(mid_state, mid_input);
                         
@@ -364,15 +355,26 @@ namespace drake {
                         A[ii] = AB.leftCols(num_states);
                         B[ii] = AB.rightCols(num_inputs);
                         
+                        /*
+                        if (ii == N - 2) {
+                            std::cout << "f:\n";
+                            for (int iii = 0; iii < N-1; iii++) {
+                                std::cout << f[iii] << endl;
+                            }
+                            std::cout << "A:\n";
+                            for (int iii = 0; iii < N-1; iii++) {
+                                std::cout << A[iii] << endl;
+                            }
+                            std::cout << "B:\n";
+                            for (int iii = 0; iii < N-1; iii++) {
+                                std::cout << B[iii] << endl;
+                            }
+                        } */
+                        
+                        // end timer
                         admm_dynamics_time_end = std::chrono::system_clock::now();
                         
                         admm_dynamics_timer = admm_dynamics_timer + (duration_cast<duration<double>>(admm_dynamics_time_end - admm_dynamics_time_start)).count();
-                        
-                        //auto affine_system = FirstOrderTaylorApproximation(*system, *context);
-                        //auto autodiff_args = math::initializeAutoDiffTuple(mid_state, mid_input);
-                        //f[ii] = affine_system->f0() + affine_system->A() * mid_state + affine_system->B() * mid_input;
-                        //A[ii] = affine_system->A();
-                        //B[ii] = affine_system->B();
                         
                         // put in correct place in large M matrix
                         placeAinM(&tripletsM, A[ii], ii);
@@ -392,7 +394,7 @@ namespace drake {
                     }
                     
                     M.setFromTriplets(tripletsM.begin(), tripletsM.end());
-                    //std::cout << "\n";
+                    //std::cout << "M:\n" << M << endl;
                     
                     /*
                     for (int ii = 0; ii < N; ii++) {
@@ -458,15 +460,17 @@ namespace drake {
                                         single_g[iiii] = 0;
                                         single_dg_x.block(iiii, 0, 1, num_states) = 0 * single_dg_x.block(iiii, 0, 1, num_states);
                                         single_dg_u.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u.block(iiii, 0, 1, num_inputs);
+                                    } else {
+                                        std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ".\n";
+                                        std::cout << "State: " << state << endl;
                                     }
                                 }
                             }
                             
                             g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
                             placeinG(&tripletsG, single_dg_x, single_dg_u, ii, running_constraint_counter, cf.length);
-                            
-                            running_constraint_counter = running_constraint_counter + cf.length;
                         }
+                        running_constraint_counter = running_constraint_counter + cf.length;
                     }
                     
                     for (int iii = 0; iii < int(double_constraints_list.size()); iii++) {
@@ -489,6 +493,11 @@ namespace drake {
                             Eigen::MatrixXd single_dg_x2 = Eigen::MatrixXd::Zero(cf.length, num_states);
                             Eigen::MatrixXd single_dg_u2 = Eigen::MatrixXd::Zero(cf.length, num_inputs);
                             
+                            std::cout << "single dg x1:\n" << single_dg_x1;
+                            std::cout << "single dg u1:\n" << single_dg_u1;
+                            std::cout << "single dg x2:\n" << single_dg_x2;
+                            std::cout << "single dg u2:\n" << single_dg_u2;
+                            
                             // evaluate constraints
                             cf.function(ii, state1, input1, state2, input2, single_g, single_dg_x1, single_dg_u1, single_dg_x2, single_dg_u2);
                             
@@ -508,16 +517,28 @@ namespace drake {
                             placeinG(&tripletsG, single_dg_x1, single_dg_u1, ii, running_constraint_counter, cf.length);
                             placeinG(&tripletsG, single_dg_x2, single_dg_u2, ii+1, running_constraint_counter, cf.length);
                             
-                            running_constraint_counter = running_constraint_counter + cf.length;
                         }
+                        running_constraint_counter = running_constraint_counter + cf.length;
                     }
                      
                     G.setFromTriplets(tripletsG.begin(), tripletsG.end());
                     
-                    std::cout << G << endl;
+                    //std::cout << G << endl;
+                    
+                    // print to output file
+                    if (i == 284) {
+                        output_G.open("/Users/ira/Documents/drake/examples/quadrotor/output/G.txt");
+                        if (!output_G.is_open()) {
+                            std::cerr << "Problem opening G output file." << endl;
+                        } else {
+                            output_G << G;
+                        }
+                        output_G.close();
+                    }
+                    
                     //std::cout << "\nG rows and cols:\n" << G.rows() << " " << G.cols() << "\n";
                     //std::cout << "\nG block:\n" << G.block(num_constraints, num_states, num_constraints, 2 * num_states) << "\n";
-                    std::cout << "g:\n" << g << "\n";
+                    //std::cout << "g:\n" << g << "\n";
                     
                     h = G * y - g;
                     
@@ -546,7 +567,7 @@ namespace drake {
                     objective = y.transpose() * R * y;
                     feasibilityVector = M * y - c;
                     feasibilityNorm = feasibilityVector.lpNorm<Eigen::Infinity>();
-                    constraintVector = G * y - h;
+                    constraintVector = g; //previous: constraintVector = G * y - h;
                     constraintNorm = constraintVector.lpNorm<Eigen::Infinity>();
                     
                     // increase rho2
@@ -559,7 +580,7 @@ namespace drake {
                     }
                     
                     // print / compute info
-                    if (i % 100 == 0) {
+                    if (i % 1 == 0) {
                         cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "\n";
                     }
                     
@@ -578,6 +599,9 @@ namespace drake {
                     solution_x.block(0, ii, num_states, 1) = y.segment(ii * num_states, num_states);
                     solution_u.block(0, ii, num_inputs, 1) = y.segment(N * num_states + ii * num_inputs, num_inputs);
                 }
+                
+                cout << "\n\n";
+                cout << solution_x.transpose() << "\n\n";
                 
                 // print timing information
                 cout << "\n---------------------------------\n";

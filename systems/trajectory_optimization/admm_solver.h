@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <Eigen/Eigen>
 #include <functional>
@@ -130,6 +131,8 @@ public:
     // reconstruct
     trajectories::PiecewisePolynomial<double> reconstructStateTrajectory();
     trajectories::PiecewisePolynomial<double> reconstructInputTrajectory();
+    Eigen::MatrixXd getSolutionStateTrajectory();
+    Eigen::MatrixXd getSolutionInputTrajectory();
     
     void setCostMatrices(Eigen::MatrixXd Q, Eigen::MatrixXd R);
     void addEqualityConstraint();

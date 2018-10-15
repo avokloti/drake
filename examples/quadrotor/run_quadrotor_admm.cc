@@ -32,14 +32,16 @@ namespace drake {
                 auto quadrotor_context_ptr = quadrotor->CreateDefaultContext();
                 
                 // state start and end
-                const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
                 
                 Eigen::VectorXd state_upper_bound(12);
                 Eigen::VectorXd state_lower_bound(12);
+                Eigen::VectorXd input_lower_bound(4);
+                Eigen::VectorXd input_upper_bound(4);
                 
                 double T = 5.0;
-                int N = 10;
+                int N = 20;
                 double dt = T/N;
                 
                 int num_states = quadrotor_context_ptr->get_num_total_states();
@@ -47,13 +49,14 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
+                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/";
                 trajectories::PiecewisePolynomial<double> dynamics_tau;
                 
                 // MAKE A LIST OF CYLINDRICAL OBSTACLES TO AVOID
-                int num_obstacles = 6;
-                Eigen::VectorXd obstacle_center_x(6);
-                Eigen::VectorXd obstacle_center_y(6);
-                Eigen::VectorXd obstacle_radii(6);
+                int num_obstacles = 2;
+                Eigen::VectorXd obstacle_center_x(2);
+                Eigen::VectorXd obstacle_center_y(2);
+                Eigen::VectorXd obstacle_radii(2);
                 
                 // function to calculate integration error of a solution trajectory and write to file
                 void calculateIntegrationError(std::string filename, int trial, trajectories::PiecewisePolynomial<double> traj_x, trajectories::PiecewisePolynomial<double> traj_u) {
@@ -90,13 +93,29 @@ namespace drake {
                 
                 //assigns values to obstacles and state lower/upper bounds
                 void initialize() {
-                    obstacle_center_x << 1.5, 1.5, 1.5, 3.5, 3.5, 3.5;
-                    obstacle_center_y << 0.5, 2.5, 4.5, 1.5, 3.5, 5.5;
+                    //obstacle_center_x << 1.5, 1.5, 1.5, 3.5, 3.5, 3.5;
+                    //obstacle_center_y << 0.5, 2.5, 4.5, 1.5, 3.5, 5.5;
                     //obstacle_radii << 0.5, 0.5, 0.5, 0.5, 0.5, 0.5;
-                    obstacle_radii << 1, 1, 1, 1, 1, 1;
+                    //obstacle_radii << 1, 1, 1, 1, 1, 1;
+                    obstacle_center_x << 0, 0;
+                    obstacle_center_y << 1.5, 2.5;
+                    obstacle_radii << 0.5, 0.7;
                     
                     state_upper_bound << 100, 100, 100, 100, 0.2, 100, 100, 100, 100, 100, 100, 100;
                     state_lower_bound << -100, -100, -100, -100, -0.2, -100, -100, -100, -100, -100, -100, -100;
+                    input_lower_bound << 0, 0, 0, 0;
+                    input_upper_bound << 10, 10, 10, 10;
+                    
+                    // write obstacles to file
+                    ofstream output_obs;
+                    output_obs.open(output_folder + "obstacles.txt");
+                    if (!output_obs.is_open()) {
+                        cerr << "Problem opening obstacle output file.\n";
+                    }
+                    output_obs << obstacle_center_x.transpose() << endl;
+                    output_obs << obstacle_center_y.transpose() << endl;
+                    output_obs << obstacle_radii.transpose() << endl;
+                    output_obs.close();
                     
                     //state_upper_bound << 100, 100, 100, 100;
                     //state_lower_bound << -100, -100, -100, -100;
@@ -195,7 +214,7 @@ namespace drake {
                         dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i]);
                     }
                 } */
-                
+                /*
                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
                     
                     int num_alpha = 5;
@@ -231,18 +250,16 @@ namespace drake {
                     std::cout << "g:\n" << g << endl;
                     std::cout << "dg_x1:\n" << dg_x1 << endl;
                     std::cout << "dg_x2:\n" << dg_x2 << endl;
-                }
+                } */
                 
                 
                 void solveSwingUpADMM(int trial, int max_iter) {
                     
-                    
                     cout << "num states: " << num_states << endl;
                     cout << "num inputs: " << num_inputs << endl;
-
                     
                     // initialize solver
-                    systems::trajectory_optimization::AdmmSolver solver = systems::trajectory_optimization::AdmmSolver(quadrotor, x0, xf, T, N, 2);
+                    systems::trajectory_optimization::AdmmSolver solver = systems::trajectory_optimization::AdmmSolver(quadrotor, x0, xf, T, N, 1000);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -261,11 +278,13 @@ namespace drake {
                     
                     // use version with only center as a constraint
                     //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
-                    solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
+                    //solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
                     
                     // add pitch constraint for consistency
                     solver.setStateUpperBound(state_upper_bound);
                     solver.setStateLowerBound(state_lower_bound);
+                    solver.setInputLowerBound(input_lower_bound);
+                    solver.setInputUpperBound(input_upper_bound);
                     
                     // start timer
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -281,11 +300,30 @@ namespace drake {
                     
                     trajectories::PiecewisePolynomial<double> xtraj_admm = solver.reconstructStateTrajectory();
                     trajectories::PiecewisePolynomial<double> utraj_admm = solver.reconstructInputTrajectory();
+
+                    writeTrajToFileTol(output_folder + "quadrotor_obstacles_admm_x", trial, xtraj_admm, num_states, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol(output_folder + "quadrotor_obstacles_admm_u", trial, utraj_admm, num_inputs, elapsed_time.count(), max_iter);
                     
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_admm_x", trial, xtraj_admm, num_states, elapsed_time.count(), max_iter);
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_admm_u", trial, utraj_admm, num_inputs, elapsed_time.count(), max_iter);
+                    calculateIntegrationError(output_folder + "quadrotor_obstacles_admm_x", trial, xtraj_admm, utraj_admm);
                     
-                    calculateIntegrationError("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_admm_x", trial, xtraj_admm, utraj_admm);
+                    Eigen::MatrixXd xtraj_admm_original = solver.getSolutionStateTrajectory();
+                    Eigen::MatrixXd utraj_admm_original = solver.getSolutionInputTrajectory();
+                    
+                    // write obstacles to file
+                    ofstream output_admm;
+                    output_admm.open(output_folder + "quadrotor_obstacles_admm_x_original.txt");
+                    if (!output_admm.is_open()) {
+                        cerr << "Problem opening admm original output file.\n";
+                    }
+                    output_admm << xtraj_admm_original << endl;
+                    output_admm.close();
+                    
+                    output_admm.open(output_folder + "quadrotor_obstacles_admm_u_original.txt");
+                    if (!output_admm.is_open()) {
+                        cerr << "Problem opening admm original output file.\n";
+                    }
+                    output_admm << utraj_admm_original << endl;
+                    output_admm.close();
                 }
                 
                 solvers::SolutionResult solveSwingUpIPOPT(int trial, int max_iter) {
@@ -295,6 +333,8 @@ namespace drake {
                     dircol.AddEqualTimeIntervalsConstraints();
                     
                     auto u = dircol.input();
+                    dircol.AddConstraintToAllKnotPoints(u >= input_lower_bound);
+                    dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
                     
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
                     dircol.AddLinearConstraint(dircol.final_state() == xf);
@@ -328,7 +368,7 @@ namespace drake {
                     auto x = dircol.state();
                     //for (int i = 0; i < obstacle_radii.size(); i++) {
                     for (int i = 0; i < num_obstacles; i++) {
-                        dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
+                        //dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
                     }
                     //}
                     
@@ -348,10 +388,10 @@ namespace drake {
                     trajectories::PiecewisePolynomial<double> xtraj_ipopt = dircol.ReconstructStateTrajectory();
                     trajectories::PiecewisePolynomial<double> utraj_ipopt = dircol.ReconstructInputTrajectory();
                     
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_ipopt_x", trial, xtraj_ipopt, num_states, elapsed_time.count(), max_iter);
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_ipopt_u", trial, utraj_ipopt, num_inputs, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol(output_folder + "quadrotor_obstacles_ipopt_x", trial, xtraj_ipopt, num_states, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol(output_folder + "quadrotor_obstacles_ipopt_u", trial, utraj_ipopt, num_inputs, elapsed_time.count(), max_iter);
                     
-                    calculateIntegrationError("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_ipopt_x", trial, xtraj_ipopt, utraj_ipopt);
+                    calculateIntegrationError(output_folder + "quadrotor_obstacles_ipopt_x", trial, xtraj_ipopt, utraj_ipopt);
                     
                     return result;
                 }
@@ -365,7 +405,8 @@ namespace drake {
                     
                     auto u = dircol.input();
                     //dircol.AddConstraintToAllKnotPoints(-torqueLimit <= u(0));
-                    //dircol.AddConstraintToAllKnotPoints(u(0) <= torqueLimit);
+                    dircol.AddConstraintToAllKnotPoints(u >= input_lower_bound);
+                    dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
                     
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
                     dircol.AddLinearConstraint(dircol.final_state() == xf);
@@ -379,7 +420,7 @@ namespace drake {
                     auto x = dircol.state();
                     //for (int i = 0; i < obstacle_radii.size(); i++) {
                     for (int i = 0; i < num_obstacles; i++) {
-                        dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
+                        //dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
                     }
                     //}
                     
@@ -398,16 +439,16 @@ namespace drake {
                     dircol.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set tolerance to be very small
-                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-10);
-                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-10);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-12);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-12);
                     
                     // set tolerance
-                    //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", max_iter);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 2000);
                     
                     // verbose?
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major print level", 2);
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Print file", "snopt_output");
-                    const std::string print_file = "/Users/irina/Documents/drake/examples/quadrotor/output/snopt" + std::to_string(trial) + ".out";
+                    const std::string print_file = output_folder + "snopt" + std::to_string(trial) + ".out";
                     cout << "Should be printing to " << print_file << endl;
                     dircol.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
                     
@@ -424,10 +465,10 @@ namespace drake {
                     trajectories::PiecewisePolynomial<double> xtraj_snopt = dircol.ReconstructStateTrajectory();
                     trajectories::PiecewisePolynomial<double> utraj_snopt = dircol.ReconstructInputTrajectory();
                     
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_snopt_x", trial, xtraj_snopt, num_states, elapsed_time.count(), max_iter);
-                    writeTrajToFileTol("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_snopt_u", trial, utraj_snopt, num_inputs, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol(output_folder + "quadrotor_obstacles_snopt_x", trial, xtraj_snopt, num_states, elapsed_time.count(), max_iter);
+                    writeTrajToFileTol(output_folder + "quadrotor_obstacles_snopt_u", trial, utraj_snopt, num_inputs, elapsed_time.count(), max_iter);
                     
-                    calculateIntegrationError("/Users/irina/Documents/drake/examples/quadrotor/output/quadrotor_obstacles_snopt_x", trial, xtraj_snopt, utraj_snopt);
+                    calculateIntegrationError(output_folder + "quadrotor_obstacles_snopt_x", trial, xtraj_snopt, utraj_snopt);
                     
                     return result;
                 }
