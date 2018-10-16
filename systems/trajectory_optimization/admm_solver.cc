@@ -461,8 +461,8 @@ namespace drake {
                                         single_dg_x.block(iiii, 0, 1, num_states) = 0 * single_dg_x.block(iiii, 0, 1, num_states);
                                         single_dg_u.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u.block(iiii, 0, 1, num_inputs);
                                     } else {
-                                        std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ".\n";
-                                        std::cout << "State: " << state << endl;
+                                        //std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ".\n";
+                                        //std::cout << "State: " << state << endl;
                                     }
                                 }
                             }
@@ -493,10 +493,10 @@ namespace drake {
                             Eigen::MatrixXd single_dg_x2 = Eigen::MatrixXd::Zero(cf.length, num_states);
                             Eigen::MatrixXd single_dg_u2 = Eigen::MatrixXd::Zero(cf.length, num_inputs);
                             
-                            std::cout << "single dg x1:\n" << single_dg_x1;
-                            std::cout << "single dg u1:\n" << single_dg_u1;
-                            std::cout << "single dg x2:\n" << single_dg_x2;
-                            std::cout << "single dg u2:\n" << single_dg_u2;
+                            //std::cout << "single dg x1:\n" << single_dg_x1;
+                            //std::cout << "single dg u1:\n" << single_dg_u1;
+                            //std::cout << "single dg x2:\n" << single_dg_x2;
+                            //std::cout << "single dg u2:\n" << single_dg_u2;
                             
                             // evaluate constraints
                             cf.function(ii, state1, input1, state2, input2, single_g, single_dg_x1, single_dg_u1, single_dg_x2, single_dg_u2);
@@ -526,6 +526,7 @@ namespace drake {
                     //std::cout << G << endl;
                     
                     // print to output file
+                    /*
                     if (i == 284) {
                         output_G.open("/Users/ira/Documents/drake/examples/quadrotor/output/G.txt");
                         if (!output_G.is_open()) {
@@ -534,7 +535,7 @@ namespace drake {
                             output_G << G;
                         }
                         output_G.close();
-                    }
+                    } */
                     
                     //std::cout << "\nG rows and cols:\n" << G.rows() << " " << G.cols() << "\n";
                     //std::cout << "\nG block:\n" << G.block(num_constraints, num_states, num_constraints, 2 * num_states) << "\n";
@@ -580,7 +581,7 @@ namespace drake {
                     }
                     
                     // print / compute info
-                    if (i % 1 == 0) {
+                    if (i % 10 == 0) {
                         cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "\n";
                     }
                     

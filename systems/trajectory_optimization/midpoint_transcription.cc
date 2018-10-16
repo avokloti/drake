@@ -18,17 +18,10 @@ namespace drake {
             using solvers::MathematicalProgram;
             using solvers::VectorXDecisionVariable;
             
-            MidpointTranscriptionConstraint::MidpointTranscriptionConstraint(
-                                                                     const System<double>& system, const Context<double>& context)
-            : MidpointTranscriptionConstraint(
-            system, context, context.get_continuous_state().size(),
-                                          (context.get_num_input_ports() > 0 ? system.get_input_port(0).size()
-                                           : 0)) {}
+            MidpointTranscriptionConstraint::MidpointTranscriptionConstraint(const System<double>& system, const Context<double>& context): MidpointTranscriptionConstraint(system, context, context.get_continuous_state().size(),
+                                          (context.get_num_input_ports() > 0 ? system.get_input_port(0).size() : 0)) {}
             
-            MidpointTranscriptionConstraint::MidpointTranscriptionConstraint(
-                                                                     const System<double>& system, const Context<double>& context,
-                                                                     int num_states, int num_inputs)
-            : Constraint(num_states, 1 + (2 * num_states) + (2 * num_inputs),
+            MidpointTranscriptionConstraint::MidpointTranscriptionConstraint(const System<double>& system, const Context<double>& context, int num_states, int num_inputs) : Constraint(num_states, 1 + (2 * num_states) + (2 * num_inputs),
                          Eigen::VectorXd::Zero(num_states),
                          Eigen::VectorXd::Zero(num_states)),
             system_(System<double>::ToAutoDiffXd(system)),
@@ -92,18 +85,19 @@ namespace drake {
                 // TODO(sam.creasey): Use caching (when it arrives) to avoid recomputing
                 // the dynamics.  Currently the dynamics evaluated here as {u1,x1} are
                 // recomputed in the next constraint as {u0,x0}.
+                /*
                 AutoDiffVecXd xdot0;
                 dynamics(x0, u0, &xdot0);
                 const Eigen::MatrixXd dxdot0 = math::autoDiffToGradientMatrix(xdot0);
                 
                 AutoDiffVecXd xdot1;
                 dynamics(x1, u1, &xdot1);
-                const Eigen::MatrixXd dxdot1 = math::autoDiffToGradientMatrix(xdot1);
+                const Eigen::MatrixXd dxdot1 = math::autoDiffToGradientMatrix(xdot1); */
                 
                 // midpoint
                 AutoDiffVecXd g;
                 dynamics(0.5 * (x0 + x1), 0.5 * (u0 + u1), &g);
-                *y = g;
+                *y = x1 - (x0 + h * g);
             }
             
             void MidpointTranscriptionConstraint::DoEval(

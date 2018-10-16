@@ -18,7 +18,7 @@
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
 
-#define LINEAR_WARM_START 1
+#define LINEAR_WARM_START 0
 
 namespace drake {
     namespace examples {
@@ -33,7 +33,7 @@ namespace drake {
                 
                 // state start and end
                 const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
                 
                 Eigen::VectorXd state_upper_bound(12);
                 Eigen::VectorXd state_lower_bound(12);
@@ -41,7 +41,7 @@ namespace drake {
                 Eigen::VectorXd input_upper_bound(4);
                 
                 double T = 5.0;
-                int N = 20;
+                int N = 30;
                 double dt = T/N;
                 
                 int num_states = quadrotor_context_ptr->get_num_total_states();
@@ -49,7 +49,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/";
+                std::string output_folder = "/Users/irina/Documents/drake/examples/quadrotor/output/";
                 trajectories::PiecewisePolynomial<double> dynamics_tau;
                 
                 // MAKE A LIST OF CYLINDRICAL OBSTACLES TO AVOID
@@ -214,20 +214,20 @@ namespace drake {
                         dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i]);
                     }
                 } */
-                /*
+                
                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
                     
                     int num_alpha = 5;
                     std::vector<double> alpha;
-                    std::cout << "Alpha: ";
+                    //std::cout << "Alpha: ";
                     for (int i = 0; i < num_alpha; i++) {
-                        std::cout << " " << static_cast<double>(i)/static_cast<double>(num_alpha);
+                        //std::cout << " " << static_cast<double>(i)/static_cast<double>(num_alpha);
                         alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha));
                     }
-                    std::cout << endl;
+                    //std::cout << endl;
                     
-                    std::cout << "x1:\n" << x1 << endl;
-                    std::cout << "x2:\n" << x2 << endl;
+                    //std::cout << "x1:\n" << x1 << endl;
+                    //std::cout << "x2:\n" << x2 << endl;
                     
                     
                     for (int i = 0; i < obstacle_radii.size(); i++) {
@@ -247,10 +247,10 @@ namespace drake {
                         }
                     }
                     
-                    std::cout << "g:\n" << g << endl;
-                    std::cout << "dg_x1:\n" << dg_x1 << endl;
-                    std::cout << "dg_x2:\n" << dg_x2 << endl;
-                } */
+                    //std::cout << "g:\n" << g << endl;
+                    //std::cout << "dg_x1:\n" << dg_x1 << endl;
+                    //std::cout << "dg_x2:\n" << dg_x2 << endl;
+                }
                 
                 
                 void solveSwingUpADMM(int trial, int max_iter) {
@@ -278,7 +278,7 @@ namespace drake {
                     
                     // use version with only center as a constraint
                     //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
-                    //solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
+                    solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
                     
                     // add pitch constraint for consistency
                     solver.setStateUpperBound(state_upper_bound);
@@ -333,7 +333,7 @@ namespace drake {
                     dircol.AddEqualTimeIntervalsConstraints();
                     
                     auto u = dircol.input();
-                    dircol.AddConstraintToAllKnotPoints(u >= input_lower_bound);
+                    dircol.AddConstraintToAllKnotPoints(input_lower_bound <= u);
                     dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
                     
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
@@ -368,7 +368,7 @@ namespace drake {
                     auto x = dircol.state();
                     //for (int i = 0; i < obstacle_radii.size(); i++) {
                     for (int i = 0; i < num_obstacles; i++) {
-                        //dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
+                        dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
                     }
                     //}
                     
@@ -420,7 +420,7 @@ namespace drake {
                     auto x = dircol.state();
                     //for (int i = 0; i < obstacle_radii.size(); i++) {
                     for (int i = 0; i < num_obstacles; i++) {
-                        //dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
+                        dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
                     }
                     //}
                     
@@ -443,7 +443,7 @@ namespace drake {
                     dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-12);
                     
                     // set tolerance
-                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 2000);
+                    //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 2000);
                     
                     // verbose?
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major print level", 2);
