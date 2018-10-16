@@ -18,6 +18,8 @@ namespace drake {
             using solvers::MathematicalProgram;
             using solvers::VectorXDecisionVariable;
             
+            /* -------------- MidpointTranscriptionConstraint methods -------------- */
+            
             MidpointTranscriptionConstraint::MidpointTranscriptionConstraint(const System<double>& system, const Context<double>& context): MidpointTranscriptionConstraint(system, context, context.get_continuous_state().size(),
                                           (context.get_num_input_ports() > 0 ? system.get_input_port(0).size() : 0)) {}
             
@@ -124,6 +126,8 @@ namespace drake {
                                            {timestep, state, next_state, input, next_input});
             }
             
+            /* -------------- MidpointTranscription methods -------------- */
+            
             MidpointTranscription::MidpointTranscription(const System<double>* system,
                                                  const Context<double>& context,
                                                  int num_time_samples,
@@ -150,6 +154,24 @@ namespace drake {
                                                                                 *system, context);
                 
                 DRAKE_ASSERT(static_cast<int>(constraint->num_constraints()) == num_states());
+                
+                // For N-1 timesteps, add a constraint which depends on the knot
+                // value along with the state and input vectors at that knot and the
+                // next.
+                for (int i = 0; i < N() - 1; i++) {
+                    AddConstraint(constraint,
+                                  {h_vars().segment<1>(i),
+                                      x_vars().segment(i * num_states(), num_states() * 2),
+                                      u_vars().segment(i * num_inputs(), num_inputs() * 2)});
+                }
+            }
+            
+            void MidpointTranscription::AddInterpolatedObstacleConstraintToAllPoints(Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii, int num_alpha) {
+                
+                // Add the dynamic constraints.
+                auto constraint = std::make_shared<InterpolatedObstacleConstraint>(num_states(), num_inputs(), obstacle_center_x, obstacle_center_y, obstacle_radii, num_alpha);
+                
+                //DRAKE_ASSERT(static_cast<int>(constraint->num_constraints()) == num_states());
                 
                 // For N-1 timesteps, add a constraint which depends on the knot
                 // value along with the state and input vectors at that knot and the
@@ -211,6 +233,76 @@ namespace drake {
                     derivatives[i] = continuous_state_->CopyToVector();
                 }
                 return PiecewisePolynomial<double>::Cubic(times_vec, states, derivatives);
+            }
+            
+            
+            
+            /* INTERPOLATED OBSTACLE AVOIDANCE CONSTRAINT METHODS */
+            InterpolatedObstacleConstraint::InterpolatedObstacleConstraint(int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii, int num_alpha): Constraint(num_alpha * obstacle_radii.size(), 1 + (2 * num_states) + (2 * num_inputs), -100000 * Eigen::VectorXd::Ones(obstacle_radii.size() * num_alpha), Eigen::VectorXd::Zero(obstacle_radii.size() * num_alpha)) {
+                
+                num_states_ = num_states;
+                num_inputs_ = num_inputs;
+                obstacle_center_x_ = obstacle_center_x;
+                obstacle_center_y_ = obstacle_center_y;
+                obstacle_radii_ = obstacle_radii;
+                num_alpha_ = num_alpha;
+            }
+            
+            void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const Eigen::VectorXd>& x, Eigen::VectorXd* y) const {
+                AutoDiffVecXd y_t;
+                Eval(math::initializeAutoDiff(x), &y_t);
+                *y = math::autoDiffToValueMatrix(y_t);
+            }
+            
+            // The format of the input to the eval() function is the
+            // tuple { timestep, state 0, state 1, input 0, input 1 },
+            // which has a total length of 1 + 2*num_states + 2*num_inputs.
+            void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const AutoDiffVecXd>& x, AutoDiffVecXd* y) const {
+                DRAKE_ASSERT(x.size() == 1 + (2 * num_states_) + (2 * num_inputs_));
+                
+                const AutoDiffXd h = x(0);
+                const auto x1 = x.segment(1, num_states_);
+                const auto x2 = x.segment(1 + num_states_, num_states_);
+                //const auto u1 = x.segment(1 + (2 * num_states_), num_inputs_);
+                //const auto u2 = x.segment(1 + (2 * num_states_) + num_inputs_, num_inputs_);
+                
+                std::vector<double> alpha;
+                for (int i = 0; i < num_alpha_; i++) {
+                    alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha_));
+                }
+                
+                for (int i = 0; i < obstacle_radii_.size(); i++) {
+                    for (int ii = 0; ii < num_alpha_; ii++) {
+                        // entries of d
+                        int index = i * num_alpha_ + ii;
+                        (*y)(index) = obstacle_radii_[i] * obstacle_radii_[i] -
+                        ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x_[i]) *
+                        ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x_[i]) -
+                        ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i]) *
+                        ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i]);
+                    }
+                }
+            }
+            
+            void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const VectorX<symbolic::Variable>>&,
+                                                         VectorX<symbolic::Expression>*) const {
+                throw std::logic_error("MidpointTranscriptionConstraint does not support symbolic evaluation.");
+            }
+            
+            Binding<Constraint> AddInterpolatedObstacleConstraint(std::shared_ptr<InterpolatedObstacleConstraint> constraint,
+                                                                   const Eigen::Ref<const VectorXDecisionVariable>& timestep,
+                                                                   const Eigen::Ref<const VectorXDecisionVariable>& state,
+                                                                   const Eigen::Ref<const VectorXDecisionVariable>& next_state,
+                                                                   const Eigen::Ref<const VectorXDecisionVariable>& input,
+                                                                   const Eigen::Ref<const VectorXDecisionVariable>& next_input,
+                                                                   MathematicalProgram* prog) {
+                DRAKE_DEMAND(timestep.size() == 1);
+                DRAKE_DEMAND(state.size() == constraint->num_states());
+                DRAKE_DEMAND(next_state.size() == constraint->num_states());
+                DRAKE_DEMAND(input.size() == constraint->num_inputs());
+                DRAKE_DEMAND(next_input.size() == constraint->num_inputs());
+                return prog->AddConstraint(constraint,
+                                           {timestep, state, next_state, input, next_input});
             }
             
         }  // namespace trajectory_optimization

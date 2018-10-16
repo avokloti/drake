@@ -18,7 +18,7 @@
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
 
-#define LINEAR_WARM_START 0
+#define LINEAR_WARM_START 1
 
 namespace drake {
     namespace examples {
@@ -49,7 +49,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/irina/Documents/drake/examples/quadrotor/output/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/";
                 trajectories::PiecewisePolynomial<double> dynamics_tau;
                 
                 // MAKE A LIST OF CYLINDRICAL OBSTACLES TO AVOID
@@ -213,43 +213,34 @@ namespace drake {
                         dg_x(i, 0) = -2 * (x[0] - obstacle_center_x[i]);
                         dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i]);
                     }
-                } */
+                }*/
                 
                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
                     
                     int num_alpha = 5;
                     std::vector<double> alpha;
-                    //std::cout << "Alpha: ";
+                    
                     for (int i = 0; i < num_alpha; i++) {
-                        //std::cout << " " << static_cast<double>(i)/static_cast<double>(num_alpha);
                         alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha));
                     }
-                    //std::cout << endl;
-                    
-                    //std::cout << "x1:\n" << x1 << endl;
-                    //std::cout << "x2:\n" << x2 << endl;
-                    
                     
                     for (int i = 0; i < obstacle_radii.size(); i++) {
                         for (int ii = 0; ii < num_alpha; ii++) {
                             // entries of d
-                            g(i) = obstacle_radii[i] * obstacle_radii[i] -
+                            int index = i * obstacle_radii.size() + ii;
+                            g(index) = obstacle_radii[i] * obstacle_radii[i] -
                                 ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) *
                                 ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) -
                                 ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]) *
                                 ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
                             
                             // entries of dd
-                            dg_x1(i, 0) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
-                            dg_x1(i, 1) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
-                            dg_x2(i, 0) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
-                            dg_x2(i, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
+                            dg_x1(index, 0) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
+                            dg_x1(index, 1) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
+                            dg_x2(index, 0) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
+                            dg_x2(index, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
                         }
                     }
-                    
-                    //std::cout << "g:\n" << g << endl;
-                    //std::cout << "dg_x1:\n" << dg_x1 << endl;
-                    //std::cout << "dg_x2:\n" << dg_x2 << endl;
                 }
                 
                 
@@ -257,6 +248,7 @@ namespace drake {
                     
                     cout << "num states: " << num_states << endl;
                     cout << "num inputs: " << num_inputs << endl;
+                    cout << "num obstacles: " << num_obstacles << endl;
                     
                     // initialize solver
                     systems::trajectory_optimization::AdmmSolver solver = systems::trajectory_optimization::AdmmSolver(quadrotor, x0, xf, T, N, 1000);
@@ -284,7 +276,7 @@ namespace drake {
                     solver.setStateUpperBound(state_upper_bound);
                     solver.setStateLowerBound(state_lower_bound);
                     solver.setInputLowerBound(input_lower_bound);
-                    solver.setInputUpperBound(input_upper_bound);
+                    //solver.setInputUpperBound(input_upper_bound);
                     
                     // start timer
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -334,7 +326,7 @@ namespace drake {
                     
                     auto u = dircol.input();
                     dircol.AddConstraintToAllKnotPoints(input_lower_bound <= u);
-                    dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
+                    //dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
                     
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
                     dircol.AddLinearConstraint(dircol.final_state() == xf);
@@ -367,9 +359,12 @@ namespace drake {
                     // add obstacle constraints!
                     auto x = dircol.state();
                     //for (int i = 0; i < obstacle_radii.size(); i++) {
-                    for (int i = 0; i < num_obstacles; i++) {
+                    
+                    for (int i = 0; i < 1; i++) {
                         dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
                     }
+                    
+                    //dircol.AddInterpolatedObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii, 5);
                     //}
                     
                     // constrain angle?
@@ -406,7 +401,7 @@ namespace drake {
                     auto u = dircol.input();
                     //dircol.AddConstraintToAllKnotPoints(-torqueLimit <= u(0));
                     dircol.AddConstraintToAllKnotPoints(u >= input_lower_bound);
-                    dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
+                    //dircol.AddConstraintToAllKnotPoints(u <= input_upper_bound);
                     
                     dircol.AddLinearConstraint(dircol.initial_state() == x0);
                     dircol.AddLinearConstraint(dircol.final_state() == xf);
@@ -419,9 +414,11 @@ namespace drake {
                     // add obstacle constraints!
                     auto x = dircol.state();
                     //for (int i = 0; i < obstacle_radii.size(); i++) {
-                    for (int i = 0; i < num_obstacles; i++) {
+                    for (int i = 0; i < 1; i++) {
                         dircol.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i)) >= obstacle_radii(i) * obstacle_radii(i));
                     }
+                    
+                    //dircol.AddInterpolatedObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii, 5);
                     //}
                     
                     // THRUST SHOULD BE POSITIVE
@@ -439,11 +436,11 @@ namespace drake {
                     dircol.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set tolerance to be very small
-                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-12);
-                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-12);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-4);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-4);
                     
                     // set tolerance
-                    //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 2000);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 200000);
                     
                     // verbose?
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major print level", 2);
@@ -481,8 +478,8 @@ namespace drake {
                     std::vector<solvers::SolutionResult> snopt_results(1);
                     
                     solveSwingUpADMM(0, max_iter);
-                    ipopt_results[0] = solveSwingUpIPOPT(0, max_iter);
                     snopt_results[0] = solveSwingUpSNOPT(0, max_iter);
+                    ipopt_results[0] = solveSwingUpIPOPT(0, max_iter);
                     
                     return 0;
                 }
