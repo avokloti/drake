@@ -21,6 +21,7 @@ drake_cc_package_library(
         ":position_constraint_force_evaluator",
 	":midpoint_transcription",
 	":admm_solver",
+	":accel_admm_solver",
     ],
 )
 
@@ -123,6 +124,26 @@ drake_cc_library(
     ],
     hdrs = [
         "admm_solver.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+    ],
+)
+
+drake_cc_library(
+    name = "accel_admm_solver",
+    srcs = [
+        "accel_admm_solver.cc",
+    ],
+    hdrs = [
+        "accel_admm_solver.h",
     ],
     deps = [
         "//math:autodiff",
