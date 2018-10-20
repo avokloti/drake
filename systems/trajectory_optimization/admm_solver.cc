@@ -581,7 +581,7 @@ namespace drake {
                     }
                     
                     // print / compute info
-                    if (i % 10 == 0) {
+                    if (i % 20 == 0) {
                         cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "\n";
                     }
                     
@@ -601,8 +601,8 @@ namespace drake {
                     solution_u.block(0, ii, num_inputs, 1) = y.segment(N * num_states + ii * num_inputs, num_inputs);
                 }
                 
-                cout << "\n\n";
-                cout << solution_x.transpose() << "\n\n";
+                //cout << "\n\n";
+                //cout << solution_x.transpose() << "\n\n";
                 
                 // print timing information
                 cout << "\n---------------------------------\n";
