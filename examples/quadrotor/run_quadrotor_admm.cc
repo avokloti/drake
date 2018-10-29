@@ -440,7 +440,7 @@ namespace drake {
                     dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-4);
                     
                     // set tolerance
-                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 200000);
+                    dircol.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
                     
                     // verbose?
                     //dircol.SetSolverOption(solvers::SnoptSolver::id(), "Major print level", 2);
