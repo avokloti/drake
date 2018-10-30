@@ -45,7 +45,7 @@ namespace drake {
                 Eigen::VectorXd input_upper_bound(4);
                 
                 double T = 6.0;
-                int N = 24;
+                int N = 40;
                 double dt = T/N;
                 
                 int num_states = quadrotor_context_ptr->get_num_total_states();
@@ -224,7 +224,7 @@ namespace drake {
                     cout << "num obstacles: " << num_obstacles << endl;
                     
                     // initialize solver
-                    systems::trajectory_optimization::AdmmSolver solver = systems::trajectory_optimization::AdmmSolver(quadrotor, x0, xf, T, N, 1000);
+                    systems::trajectory_optimization::admm_solver::AdmmSolver solver = systems::trajectory_optimization::admm_solver::AdmmSolver(quadrotor, x0, xf, T, N, 1000);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));

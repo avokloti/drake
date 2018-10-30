@@ -20,7 +20,7 @@
 #include "drake/solvers/snopt_solver.h"
 
 #define LINEAR_WARM_START 0
-#define BUGTRAP 1
+#define BUGTRAP 0
 
 namespace drake {
     namespace examples {
@@ -36,6 +36,8 @@ namespace drake {
                 // state start and end
                 const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
                 const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                //const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                //const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
                 
                 Eigen::VectorXd state_upper_bound(12);
                 Eigen::VectorXd state_lower_bound(12);
@@ -55,61 +57,32 @@ namespace drake {
                 trajectories::PiecewisePolynomial<double> dynamics_tau;
                 
                 // MAKE A LIST OF CYLINDRICAL OBSTACLES TO AVOID
-                if (BUGTRAP) {
-                    int num_obstacles = 2;
-                    Eigen::VectorXd obstacle_center_x(2);
-                    Eigen::VectorXd obstacle_center_y(2);
-                    Eigen::VectorXd obstacle_radii(2);
-                } else {
-                    int num_obstacles = 2;
-                    Eigen::VectorXd obstacle_center_x(2);
-                    Eigen::VectorXd obstacle_center_y(2);
-                    Eigen::VectorXd obstacle_radii(2);
-                }
-                
-                // function to calculate integration error of a solution trajectory and write to file
-                /*
-                void calculateIntegrationError(std::string filename, int trial, trajectories::PiecewisePolynomial<double> traj_x, trajectories::PiecewisePolynomial<double> traj_u) {
-                    
-                    // calculate error
-                    Eigen::MatrixXd midpoint_error(num_states, N-1);
-                    for (int i = 0; i < N-1; i++) {
-                        Eigen::VectorXd state_value = (traj_x.value(dt * i) + traj_x.value(dt * (i+1)))/2;
-                        Eigen::VectorXd input_value = (traj_u.value(dt * i) + traj_u.value(dt * (i+1)))/2;
-                        
-                        // calculate dynamics at midpoint
-                        quadrotor_context_ptr->get_mutable_continuous_state().SetFromVector(state_value);
-                        auto input_port_value = &quadrotor_context_ptr->FixInputPort(0, quadrotor->AllocateInputVector(quadrotor->get_input_port(0)));
-                        input_port_value->systems::FixedInputPortValue::GetMutableVectorData<double>()->SetFromVector(input_value);
-                        
-                        Eigen::MatrixXd midpoint_derivative;
-                        std::unique_ptr<systems::ContinuousState<double> > continuous_state(quadrotor->AllocateTimeDerivatives());
-                        quadrotor->CalcTimeDerivatives(*quadrotor_context_ptr, continuous_state.get());
-                        midpoint_derivative = continuous_state->CopyToVector();
-                        
-                        midpoint_error.col(i) = traj_x.value(dt * i) - (traj_x.value(dt * (i+1)) + dt * midpoint_derivative);
-                    }
-                    
-                    // reshape/map matrix into vector
-                    Map<VectorXd> error_vector(midpoint_error.data(), midpoint_error.size());
-                    
-                    // append to the end of the state files from before
-                    std::string traj_filename = filename + "_" + std::to_string(trial) + "_params.txt";
-                    output_file.open(traj_filename, std::ios_base::app);
-                    output_file << error_vector.lpNorm<2>() << endl;
-                    output_file << error_vector.lpNorm<Infinity>() << endl;
-                    output_file.close();
-                } */
+                int num_obstacles;
+                Eigen::VectorXd obstacle_center_x;
+                Eigen::VectorXd obstacle_center_y;
+                Eigen::VectorXd obstacle_radii;
                 
                 //assigns values to obstacles and state lower/upper bounds
                 void initialize() {
-                    //obstacle_center_x << 1.5, 1.5, 1.5, 3.5, 3.5, 3.5;
-                    //obstacle_center_y << 0.5, 2.5, 4.5, 1.5, 3.5, 5.5;
-                    //obstacle_radii << 0.5, 0.5, 0.5, 0.5, 0.5, 0.5;
-                    //obstacle_radii << 1, 1, 1, 1, 1, 1;
-                    obstacle_center_x << 0, 1.0;
-                    obstacle_center_y << 1.5, 2.5;
-                    obstacle_radii << 0.5, 0.7;
+                    if (BUGTRAP) {
+                        num_obstacles = 13;
+                    } else {
+                        num_obstacles = 2;
+                    }
+                    
+                    obstacle_center_x = Eigen::VectorXd::Zero(num_obstacles);
+                    obstacle_center_y = Eigen::VectorXd::Zero(num_obstacles);
+                    obstacle_radii = Eigen::VectorXd::Zero(num_obstacles);
+                    
+                    if (BUGTRAP) {
+                        obstacle_center_x << 0, 0, 0, 0, 0, 0, 0, 0.5, 1.0, 1.5, 0.5, 1.0, 1.5;
+                        obstacle_center_y << -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, -1.5, -1.5, -1.5, 1.5, 1.5, 1.5;
+                        obstacle_radii << 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5;
+                    } else {
+                        obstacle_center_x << 0, 1.0;
+                        obstacle_center_y << 1.5, 2.5;
+                        obstacle_radii << 0.5, 0.7;
+                    }
                     
                     state_upper_bound << 100, 100, 100, 100, 0.2, 100, 100, 100, 100, 100, 100, 100;
                     state_lower_bound << -100, -100, -100, -100, -0.2, -100, -100, -100, -100, -100, -100, -100;
@@ -295,33 +268,33 @@ namespace drake {
                     }
                 }
                 /*
-                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
-                 
-                 int num_alpha = 5;
-                 std::vector<double> alpha;
-                 
-                 for (int i = 0; i < num_alpha; i++) {
-                 alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha));
-                 }
-                 
-                 for (int i = 0; i < obstacle_radii.size(); i++) {
-                 for (int ii = 0; ii < num_alpha; ii++) {
-                 // entries of d
-                 int index = i * obstacle_radii.size() + ii;
-                 g(index) = obstacle_radii[i] * obstacle_radii[i] -
-                 ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) *
-                 ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) -
-                 ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]) *
-                 ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
-                 
-                 // entries of dd
-                 dg_x1(index, 0) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
-                 dg_x1(index, 1) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
-                 dg_x2(index, 0) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
-                 dg_x2(index, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
-                 }
-                 }
-                 } */
+                void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
+                    
+                    int num_alpha = 5;
+                    std::vector<double> alpha;
+                    
+                    for (int i = 0; i < num_alpha; i++) {
+                        alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha));
+                    }
+                    
+                    for (int i = 0; i < obstacle_radii.size(); i++) {
+                        for (int ii = 0; ii < num_alpha; ii++) {
+                            // entries of d
+                            int index = i * obstacle_radii.size() + ii;
+                            g(index) = obstacle_radii[i] * obstacle_radii[i] -
+                            ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) *
+                            ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) -
+                            ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]) *
+                            ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
+                            
+                            // entries of dd
+                            dg_x1(index, 0) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
+                            dg_x1(index, 1) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
+                            dg_x2(index, 0) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]);
+                            dg_x2(index, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
+                        }
+                    }
+                } */
                 
                 
                 void solveSwingUpADMM(int trial, int max_iter) {

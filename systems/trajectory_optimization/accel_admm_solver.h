@@ -15,6 +15,8 @@
 #include "drake/common/autodiff.h"
 #include "drake/common/eigen_types.h"
 
+#define DEBUG 1
+
 using namespace std;
 using namespace Eigen;
 
@@ -108,6 +110,8 @@ namespace drake {
                 bool solve_flag;
                 Eigen::MatrixXd solution_x;
                 Eigen::MatrixXd solution_u;
+                
+                ofstream output_file; // for printing debug info
                 
                 /* --------- functions --------- */
             public:

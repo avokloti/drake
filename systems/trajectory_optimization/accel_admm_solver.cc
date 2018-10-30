@@ -303,6 +303,7 @@ namespace drake {
                 double feasibilityNorm;
                 double oldFeasibilityNorm;
                 double constraintNorm;
+                double full_objective;
                 
                 // cost matrix
                 Eigen::MatrixXd R = Eigen::MatrixXd::Zero(N * (num_states + num_inputs), N * (num_states + num_inputs));
@@ -330,8 +331,22 @@ namespace drake {
                 double rho2 = initial_rho2;
                 double rho3 = initial_rho3;
                 
+                // open output file for writing y
+                if (DEBUG) {
+                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/accel/single_run_accel_admm_y.txt");
+                    if (!output_file.is_open()) {
+                        std::cerr << "Problem opening output file.";
+                        return;
+                    }
+                }
+                
                 int i = 0;
                 while (i < max_iter && (i < 1 || feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility || constraintVector.lpNorm<Eigen::Infinity>() > tol_constraints)) {
+                    
+                    // write y to file
+                    if (DEBUG) {
+                        output_file << y.transpose() << endl;
+                    }
                     
                     // for each time point
                     for (int ii = 0; ii < N-1; ii++) {
@@ -577,7 +592,7 @@ namespace drake {
                     
                     // accelerated updates
                     if (i > 0) {
-                        double accel_term = max(static_cast<double>(i)/static_cast<double>(i+20), 0.4);
+                        double accel_term = max(static_cast<double>(i)/static_cast<double>(i+50), 0.5);
                         y_hat = y + accel_term * (y - y_prev);
                         lambda_hat = lambda + accel_term * (lambda - lambda_prev);
                     }
@@ -588,6 +603,8 @@ namespace drake {
                     feasibilityNorm = feasibilityVector.lpNorm<Eigen::Infinity>();
                     constraintVector = g; //previous: constraintVector = G * y - h;
                     constraintNorm = constraintVector.lpNorm<Eigen::Infinity>();
+                    
+                    full_objective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
                     
                     // increase rho2
                     rho2 = min(rho2 * rho2_increase_rate, rho_max);
@@ -600,7 +617,7 @@ namespace drake {
                     
                     // print / compute info
                     if (i % 1 == 0) {
-                        cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "\n";
+                        cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << full_objective << "\n";
                     }
                     
                     tripletsM.clear();
@@ -633,6 +650,10 @@ namespace drake {
                 cout << "Total time spent in second ADMM update: " << admm_update2_timer << " (sec)\n";
                 cout << "Total update time: " << admm_update1_timer + admm_update2_timer << " (sec)\n";
                 solve_flag = true;
+                
+                if (DEBUG) {
+                    output_file.close();
+                }
             }
             
             
