@@ -21,6 +21,7 @@ using namespace Eigen;
 namespace drake {
 namespace systems {
 namespace trajectory_optimization {
+namespace admm_solver {
             
 enum constraint_flag {EQUALITY, INEQUALITY};
 
@@ -121,6 +122,7 @@ public:
     void setRho2(double rho2);
     void setRho3(double rho3);
     void setFeasibilityTolerance(double tol);
+    void setConstraintTolerance(double tol);
     
     // bounds and constraints
     void setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound);
@@ -171,9 +173,9 @@ private:
     void stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
     void stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
 };
-        
-        } // namespace trajectory_optimization
-    } // namespace systems
+} // namespace admm_solver
+} // namespace trajectory_optimization
+} // namespace systems
 } // namespace drake
 
 

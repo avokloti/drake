@@ -27,7 +27,7 @@ namespace drake {
             namespace {
                 // output destination
                 ofstream output_file;
-                std::string output_folder = "/Users/irina/Documents/drake/examples/quadrotor/output/random_obstacles/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/random_obstacles/";
                 
                 typedef trajectories::PiecewisePolynomial<double> PiecewisePolynomialType;
                 
@@ -240,6 +240,7 @@ namespace drake {
                     // set tolerances
                     solver.setRho1(500);
                     solver.setFeasibilityTolerance(1e-6);
+                    solver.setConstraintTolerance(1e-6);
                     
                     // use version with only center as a constraint
                     solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");

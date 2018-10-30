@@ -10,6 +10,7 @@ using namespace std::placeholders;
 namespace drake {
     namespace systems {
         namespace trajectory_optimization {
+            namespace admm_solver {
             
             /* ---------------------------------------------- SOLVER INITIALIZATION ---------------------------------------------- */
             
@@ -77,6 +78,10 @@ namespace drake {
             
             void AdmmSolver::setFeasibilityTolerance(double tol) {
                 tol_feasibility = tol;
+            }
+            
+            void AdmmSolver::setConstraintTolerance(double tol) {
+                tol_constraints = tol;
             }
             
             void AdmmSolver::setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
@@ -320,7 +325,7 @@ namespace drake {
                 double rho3 = initial_rho3;
                 
                 int i = 0;
-                while (i < max_iter && (i < 1 || feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility)) {
+                while (i < max_iter && (i < 1 || feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility || constraintVector.lpNorm<Eigen::Infinity>() > tol_constraints)) {
                     
                     // for each time point
                     for (int ii = 0; ii < N-1; ii++) {
@@ -888,7 +893,7 @@ namespace drake {
                 //gflags::ParseCommandLineFlags(&argc, &argv, true);
                 return 0;
             }
-            
+            } // namespace admm_solver
         } // namespace trajectory_optimization
     } // namespace systems
 } // namespace drake

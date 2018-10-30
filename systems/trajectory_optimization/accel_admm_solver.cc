@@ -2,7 +2,7 @@
 
 // run as: g++ -I /usr/local/include/eigen3/ -O2 solveADMMconstraints.cpp
 
-#include "drake/systems/trajectory_optimization/admm_solver.h"
+#include "drake/systems/trajectory_optimization/accel_admm_solver.h"
 
 using namespace std::chrono;
 using namespace std::placeholders;
@@ -10,10 +10,11 @@ using namespace std::placeholders;
 namespace drake {
     namespace systems {
         namespace trajectory_optimization {
+            namespace accel_admm_solver {
             
             /* ---------------------------------------------- SOLVER INITIALIZATION ---------------------------------------------- */
             
-            AdmmSolver::AdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter) {
+            AccelAdmmSolver::AccelAdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter) {
                 
                 system = par_system;
                 context = system->CreateDefaultContext();
@@ -63,23 +64,27 @@ namespace drake {
                 solve_flag = false;
             }
             
-            void AdmmSolver::setRho1(double rho) {
+            void AccelAdmmSolver::setRho1(double rho) {
                 initial_rho1 = rho;
             }
             
-            void AdmmSolver::setRho2(double rho) {
+            void AccelAdmmSolver::setRho2(double rho) {
                 initial_rho2 = rho;
             }
             
-            void AdmmSolver::setRho3(double rho) {
+            void AccelAdmmSolver::setRho3(double rho) {
                 initial_rho3 = rho;
             }
             
-            void AdmmSolver::setFeasibilityTolerance(double tol) {
+            void AccelAdmmSolver::setFeasibilityTolerance(double tol) {
                 tol_feasibility = tol;
             }
             
-            void AdmmSolver::setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
+            void AccelAdmmSolver::setConstraintTolerance(double tol) {
+                tol_constraints = tol;
+            }
+            
+            void AccelAdmmSolver::setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
                 if (bound.size() != num_states) {
                     cerr << "State upper bound must have length equal to the number of states.\n";
                 }
@@ -96,7 +101,7 @@ namespace drake {
                 num_constraints = num_constraints + num_states;
             }
             
-            void AdmmSolver::setStateLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
+            void AccelAdmmSolver::setStateLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
                 if (bound.size() != num_states) {
                     cerr << "State lower bound must have length equal to the number of states.\n";
                 }
@@ -113,7 +118,7 @@ namespace drake {
                 num_constraints = num_constraints + num_states;
             }
             
-            void AdmmSolver::setInputUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
+            void AccelAdmmSolver::setInputUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
                 if (bound.size() != num_inputs) {
                     cerr << "Input upper bound must have length equal to the number of inputs.\n";
                 }
@@ -130,7 +135,7 @@ namespace drake {
                 num_constraints = num_constraints + num_inputs;
             }
             
-            void AdmmSolver::setInputLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
+            void AccelAdmmSolver::setInputLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
                 if (bound.size() != num_inputs) {
                     cerr << "Input lower bound must have length equal to the number of inputs.\n";
                 }
@@ -147,15 +152,15 @@ namespace drake {
                 num_constraints = num_constraints + num_inputs;
             }
             
-            Eigen::MatrixXd AdmmSolver::getSolutionStateTrajectory() {
+            Eigen::MatrixXd AccelAdmmSolver::getSolutionStateTrajectory() {
                 return solution_x;
             }
             
-            Eigen::MatrixXd AdmmSolver::getSolutionInputTrajectory() {
+            Eigen::MatrixXd AccelAdmmSolver::getSolutionInputTrajectory() {
                 return solution_u;
             }
             
-            trajectories::PiecewisePolynomial<double> AdmmSolver::reconstructStateTrajectory() {
+            trajectories::PiecewisePolynomial<double> AccelAdmmSolver::reconstructStateTrajectory() {
                 // check if problem has been solved
                 if (!solve_flag) {
                     cerr << "Cannot reconstruct trajectory -- problem has not been solved successfully.\n";
@@ -180,7 +185,7 @@ namespace drake {
             }
             
             
-            trajectories::PiecewisePolynomial<double> AdmmSolver::reconstructInputTrajectory() {
+            trajectories::PiecewisePolynomial<double> AccelAdmmSolver::reconstructInputTrajectory() {
                 // check if problem has been solved
                 if (!solve_flag) {
                     cerr << "Cannot reconstruct trajectory -- problem has not been solved successfully.\n";
@@ -196,7 +201,7 @@ namespace drake {
                 return trajectories::PiecewisePolynomial<double>::FirstOrderHold(times_vec, inputs);
             }
             
-            void AdmmSolver::addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
+            void AccelAdmmSolver::addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                 // make individual constraint structure
                 struct single_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
                 
@@ -205,7 +210,7 @@ namespace drake {
                 num_constraints = num_constraints + constraint_size;
             }
             
-            void AdmmSolver::addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
+            void AccelAdmmSolver::addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                 // make individual constraint structure
                 struct single_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name};
                 
@@ -214,7 +219,7 @@ namespace drake {
                 num_constraints = num_constraints + constraint_size;
             }
             
-            void AdmmSolver::addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
+            void AccelAdmmSolver::addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
                 // make individual constraint structure
                 struct double_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
                 
@@ -223,7 +228,7 @@ namespace drake {
                 num_constraints = num_constraints + constraint_size;
             }
             
-            void AdmmSolver::addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
+            void AccelAdmmSolver::addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
                 // make individual constraint structure
                 struct double_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name};
                 
@@ -236,7 +241,7 @@ namespace drake {
             
             /* ---------------------------------------------- SOLVE METHOD ---------------------------------------------- */
             
-            void AdmmSolver::solve(Eigen::Ref<Eigen::VectorXd> y) {
+            void AccelAdmmSolver::solve(Eigen::Ref<Eigen::VectorXd> y) {
                 
                 std::cout << "num states (in ADMM): " << num_states << endl;
                 std::cout << "num inputs (in ADMM): " << num_inputs << endl;
@@ -249,6 +254,12 @@ namespace drake {
                 // allocate array for x, y, lambda
                 Eigen::VectorXd x(y);
                 Eigen::VectorXd lambda = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                
+                // variables for accelerated version
+                Eigen::VectorXd y_hat = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                Eigen::VectorXd lambda_hat = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                Eigen::VectorXd y_prev;
+                Eigen::VectorXd lambda_prev;
                 
                 // initialize solution vectors
                 solution_x = Eigen::MatrixXd::Zero(num_states, N);
@@ -320,7 +331,7 @@ namespace drake {
                 double rho3 = initial_rho3;
                 
                 int i = 0;
-                while (i < max_iter && (i < 1 || feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility)) {
+                while (i < max_iter && (i < 1 || feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility || constraintVector.lpNorm<Eigen::Infinity>() > tol_constraints)) {
                     
                     // for each time point
                     for (int ii = 0; ii < N-1; ii++) {
@@ -546,7 +557,7 @@ namespace drake {
                     // first ADMM update
                     admm_update1_time_start = std::chrono::system_clock::now(); // start timer
                     
-                    temp = y - lambda;
+                    temp = y_hat - lambda_hat;
                     x = proximalUpdateObjective(temp, R, rho1);
                     
                     admm_update1_time_end = std::chrono::system_clock::now(); // end timer
@@ -562,7 +573,14 @@ namespace drake {
                     admm_update2_timer = admm_update2_timer + (duration_cast<duration<double>>(admm_update2_time_end - admm_update2_time_start)).count();
                     
                     // dual update
-                    lambda = lambda + x - y;
+                    lambda = lambda_hat + x - y; // changed for accel
+                    
+                    // accelerated updates
+                    if (i > 0) {
+                        double accel_term = max(static_cast<double>(i)/static_cast<double>(i+20), 0.4);
+                        y_hat = y + accel_term * (y - y_prev);
+                        lambda_hat = lambda + accel_term * (lambda - lambda_prev);
+                    }
                     
                     // increase rho2 and rho3
                     objective = y.transpose() * R * y;
@@ -581,7 +599,7 @@ namespace drake {
                     }
                     
                     // print / compute info
-                    if (i % 10 == 0) {
+                    if (i % 1 == 0) {
                         cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "\n";
                     }
                     
@@ -589,6 +607,8 @@ namespace drake {
                     tripletsG.clear();
                     oldFeasibilityNorm = feasibilityNorm;
                     oldObjective = objective;
+                    lambda_prev = lambda;
+                    y_prev = y;
                     i++;
                 }
                 
@@ -601,8 +621,8 @@ namespace drake {
                     solution_u.block(0, ii, num_inputs, 1) = y.segment(N * num_states + ii * num_inputs, num_inputs);
                 }
                 
-                cout << "\n\n";
-                cout << solution_x.transpose() << "\n\n";
+                //cout << "\n\n";
+                //cout << solution_x.transpose() << "\n\n";
                 
                 // print timing information
                 cout << "\n---------------------------------\n";
@@ -621,7 +641,7 @@ namespace drake {
             
             // really naive implementation... whatever
             /*
-             int AdmmSolver::nonzeroCount(Eigen::Ref<Eigen::MatrixXd> A) {
+             int AccelAdmmSolver::nonzeroCount(Eigen::Ref<Eigen::MatrixXd> A) {
              int count = 0;
              for (int i = 0; i < A.rows(); i++) {
              for (int ii = 0; ii < A.cols(); ii++) {
@@ -635,14 +655,14 @@ namespace drake {
             
             
             // FIRST PROXIMAL UPDATE
-            Eigen::VectorXd AdmmSolver::proximalUpdateObjective(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::MatrixXd> R, double rho1) {
+            Eigen::VectorXd AccelAdmmSolver::proximalUpdateObjective(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::MatrixXd> R, double rho1) {
                 Eigen::MatrixXd temp = 2 * R + rho1 * Eigen::MatrixXd::Identity(N * (num_states + num_inputs), N * (num_states + num_inputs));
                 return temp.llt().solve(rho1 * nu);
             }
             
             
             // SECOND PROXIMAL UPDATE
-            Eigen::VectorXd AdmmSolver::proximalUpdateConstraints(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::SparseMatrix<double> > M, Eigen::Ref<Eigen::VectorXd> c, Eigen::Ref<Eigen::SparseMatrix<double> > G, Eigen::Ref<Eigen::VectorXd> h, double rho1, double rho2, double rho3) {
+            Eigen::VectorXd AccelAdmmSolver::proximalUpdateConstraints(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::SparseMatrix<double> > M, Eigen::Ref<Eigen::VectorXd> c, Eigen::Ref<Eigen::SparseMatrix<double> > G, Eigen::Ref<Eigen::VectorXd> h, double rho1, double rho2, double rho3) {
                 Eigen::MatrixXd Mt = M.transpose();
                 Eigen::MatrixXd Gt = G.transpose();
                 
@@ -651,17 +671,17 @@ namespace drake {
                 return temp.llt().solve(2 * rho2 * Mt * c + 2 * rho3 * Gt * h + rho1 * nu);
             }
             
-            double AdmmSolver::getStateFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
+            double AccelAdmmSolver::getStateFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
                 return (y[time_index * num_states + index]);
             }
             
-            double AdmmSolver::getInputFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
+            double AccelAdmmSolver::getInputFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
                 return (y[N * num_states + time_index * num_inputs + index]);
             }
             
             
             // DOUBLE INTEGRATOR DYNAMICS
-            void AdmmSolver::integratorDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> state, Eigen::Ref<Eigen::VectorXd> input, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
+            void AccelAdmmSolver::integratorDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> state, Eigen::Ref<Eigen::VectorXd> input, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
                 f[0] = state[1];
                 f[1] = input[0];
                 
@@ -673,7 +693,7 @@ namespace drake {
             
             /*
              // QUAD DYNAMICS
-             void AdmmSolver::quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
+             void AccelAdmmSolver::quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
              
              double quad_L = 0.25; // length of rotor arm
              double quad_mass = 0.486; // mass of quadrotor
@@ -701,7 +721,7 @@ namespace drake {
             
             /*
              // ALL CONSTRAINTS? (FOR TESTING)
-             void AdmmSolver::allConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
+             void AccelAdmmSolver::allConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
              
              int num_states = 6; int num_inputs = 2;
              int N = (x.size() / num_states);
@@ -729,31 +749,31 @@ namespace drake {
              */
             
             // STATE INPUT CONSTRAINTS
-            void AdmmSolver::stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+            void AccelAdmmSolver::stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                 g = x - x_upper_bound;
                 dg_x = Eigen::MatrixXd::Identity(num_states, num_states);
                 dg_u = Eigen::MatrixXd::Zero(num_states, num_inputs);
             }
             
-            void AdmmSolver::stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+            void AccelAdmmSolver::stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                 g = x_lower_bound - x;
                 dg_x = -1 * Eigen::MatrixXd::Identity(num_states, num_states);
                 dg_u = Eigen::MatrixXd::Zero(num_states, num_inputs);
             }
             
-            void AdmmSolver::inputUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+            void AccelAdmmSolver::inputUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                 g = u - u_upper_bound;
                 dg_x = Eigen::MatrixXd::Zero(num_inputs, num_states);
                 dg_u = Eigen::MatrixXd::Identity(num_inputs, num_inputs);
             }
             
-            void AdmmSolver::inputLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+            void AccelAdmmSolver::inputLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                 g = u_lower_bound - u;
                 dg_x = Eigen::MatrixXd::Zero(num_inputs, num_states);
                 dg_u = -1 * Eigen::MatrixXd::Identity(num_inputs, num_inputs);
             }
             /*
-             void AdmmSolver::stateInputConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> x_upper_bound, Eigen::Ref<Eigen::VectorXd> x_lower_bound, Eigen::Ref<Eigen::VectorXd> u_upper_bound, Eigen::Ref<Eigen::VectorXd> u_lower_bound, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
+             void AccelAdmmSolver::stateInputConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> x_upper_bound, Eigen::Ref<Eigen::VectorXd> x_lower_bound, Eigen::Ref<Eigen::VectorXd> u_upper_bound, Eigen::Ref<Eigen::VectorXd> u_lower_bound, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
              
              int nn = num_states + num_inputs;
              
@@ -770,7 +790,7 @@ namespace drake {
             
             /*
              // OBSTACLE CONSTRAINTS
-             void AdmmSolver::obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, obstacle* obs, int num_constraints, int N, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
+             void AccelAdmmSolver::obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, obstacle* obs, int num_constraints, int N, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
              
              double quad_L = 0.25;
              
@@ -807,7 +827,7 @@ namespace drake {
             
             
             // PLACE A MATRIX INTO M
-            void AdmmSolver::placeAinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Aii, int ii) {
+            void AccelAdmmSolver::placeAinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Aii, int ii) {
                 // place values of A in M
                 for (int row = 0; row < num_states; row++) {
                     for (int col = 0; col < num_states; col++) {
@@ -824,7 +844,7 @@ namespace drake {
             
             
             // PLACE B MATRIX INTO M
-            void AdmmSolver::placeBinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Bii, int ii) {
+            void AccelAdmmSolver::placeBinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Bii, int ii) {
                 // should copy entries of Bii into right place in M
                 for (int row = 0; row < num_states; row++) {
                     for (int col = 0; col < num_inputs; col++) {
@@ -836,7 +856,7 @@ namespace drake {
             
             
             // CONSTRUCT C VECTOR
-            void AdmmSolver::makeCVector(Eigen::Ref<Eigen::VectorXd> c, int ii, Eigen::Ref<Eigen::VectorXd> mid_state, Eigen::Ref<Eigen::VectorXd> mid_input, Eigen::Ref<Eigen::VectorXd> fii, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii, Eigen::Ref<Eigen::VectorXd> y) {
+            void AccelAdmmSolver::makeCVector(Eigen::Ref<Eigen::VectorXd> c, int ii, Eigen::Ref<Eigen::VectorXd> mid_state, Eigen::Ref<Eigen::VectorXd> mid_input, Eigen::Ref<Eigen::VectorXd> fii, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii, Eigen::Ref<Eigen::VectorXd> y) {
                 
                 Eigen::VectorXd curr_x = y.segment(ii * num_states, num_states);
                 Eigen::VectorXd curr_u = y.segment(N * num_states + ii * num_inputs, num_inputs);
@@ -849,7 +869,7 @@ namespace drake {
             
             // PLACE IN G
             /*
-             void AdmmSolver::placeinG(int ii, std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> point_dg_x, Eigen::Ref<Eigen::MatrixXd> point_dg_u) {
+             void AccelAdmmSolver::placeinG(int ii, std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> point_dg_x, Eigen::Ref<Eigen::MatrixXd> point_dg_u) {
              
              // place values of point dg's into G
              for (int row = 0; row < num_constraints; row++) {
@@ -862,7 +882,7 @@ namespace drake {
              }
              } */
             
-            void AdmmSolver::placeinG(std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> single_dg_x, Eigen::Ref<Eigen::MatrixXd> single_dg_u, int ii, int running_constraint_counter, int cf_length) {
+            void AccelAdmmSolver::placeinG(std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> single_dg_x, Eigen::Ref<Eigen::MatrixXd> single_dg_u, int ii, int running_constraint_counter, int cf_length) {
                 
                 for (int row = 0; row < cf_length; row++) {
                     for (int col = 0; col < num_states; col++) {
@@ -888,7 +908,7 @@ namespace drake {
                 //gflags::ParseCommandLineFlags(&argc, &argv, true);
                 return 0;
             }
-            
+            } // namespace accel_admm_solver
         } // namespace trajectory_optimization
     } // namespace systems
 } // namespace drake

@@ -21,6 +21,7 @@ using namespace Eigen;
 namespace drake {
     namespace systems {
         namespace trajectory_optimization {
+            namespace accel_admm_solver {
             
             enum constraint_flag {EQUALITY, INEQUALITY};
             
@@ -47,7 +48,7 @@ namespace drake {
             
             
             
-            class AdmmSolver {
+            class AccelAdmmSolver {
                 /* --------- fields --------- */
             private:
                 int N; // number of knot points
@@ -111,7 +112,7 @@ namespace drake {
                 /* --------- functions --------- */
             public:
                 // constructor:
-                AdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter);
+                AccelAdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter);
                 
                 // typedef for dynamics function pointer
                 //typedef void (*function_pointer)(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
@@ -121,6 +122,7 @@ namespace drake {
                 void setRho2(double rho2);
                 void setRho3(double rho3);
                 void setFeasibilityTolerance(double tol);
+                void setConstraintTolerance(double tol);
                 
                 // bounds and constraints
                 void setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound);
@@ -171,7 +173,7 @@ namespace drake {
                 void stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
                 void stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
             };
-            
+            } //namespace accel_admm_solver
         } // namespace trajectory_optimization
     } // namespace systems
 } // namespace drake
