@@ -22,6 +22,7 @@ drake_cc_package_library(
 	":midpoint_transcription",
 	":admm_solver",
 	":accel_admm_solver",
+	":admm_solver_weighted",
     ],
 )
 
@@ -144,6 +145,26 @@ drake_cc_library(
     ],
     hdrs = [
         "accel_admm_solver.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+    ],
+)
+
+drake_cc_library(
+    name = "admm_solver_weighted",
+    srcs = [
+        "admm_solver_weighted.cc",
+    ],
+    hdrs = [
+        "admm_solver_weighted.h",
     ],
     deps = [
         "//math:autodiff",

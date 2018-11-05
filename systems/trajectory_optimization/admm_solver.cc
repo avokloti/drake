@@ -595,7 +595,7 @@ namespace drake {
                     
                     // increase rho2
                     rho2 = min(rho2 * rho2_increase_rate, rho_max);
-                    rho3 = min(rho3 * rho3_increase_rate, rho_max);
+                    //rho3 = min(rho3 * rho3_increase_rate, rho_max);
                     
                     // decrease rho1 if constraints are mostly satisfied
                     if (i > 2 && (feasibilityNorm - oldFeasibilityNorm < 0.001)) {

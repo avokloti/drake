@@ -20,7 +20,7 @@
 #include "drake/solvers/snopt_solver.h"
 
 #define LINEAR_WARM_START 0
-#define BUGTRAP 0
+#define BUGTRAP 1
 
 namespace drake {
     namespace examples {
@@ -34,10 +34,10 @@ namespace drake {
                 auto quadrotor_context_ptr = quadrotor->CreateDefaultContext();
                 
                 // state start and end
-                const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                //const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                //const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                //const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                //const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
                 
                 Eigen::VectorXd state_upper_bound(12);
                 Eigen::VectorXd state_lower_bound(12);
@@ -255,7 +255,7 @@ namespace drake {
                  dg_x(3 * i + 2, 2) = -2 * left_side_x * (-quad_L * sin(x[3])) - 2 * left_side_y * (quad_L * cos(x[3]));
                  }
                  } */
-                
+                /*
                 void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                     
                     for (int i = 0; i < obstacle_radii.size(); i++) {
@@ -266,8 +266,8 @@ namespace drake {
                         dg_x(i, 0) = -2 * (x[0] - obstacle_center_x[i]);
                         dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i]);
                     }
-                }
-                /*
+                } */
+                
                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
                     
                     int num_alpha = 5;
@@ -280,7 +280,7 @@ namespace drake {
                     for (int i = 0; i < obstacle_radii.size(); i++) {
                         for (int ii = 0; ii < num_alpha; ii++) {
                             // entries of d
-                            int index = i * obstacle_radii.size() + ii;
+                            int index = i * num_alpha + ii;
                             g(index) = obstacle_radii[i] * obstacle_radii[i] -
                             ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) *
                             ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x[i]) -
@@ -294,7 +294,7 @@ namespace drake {
                             dg_x2(index, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i]);
                         }
                     }
-                } */
+                }
                 
                 
                 void solveSwingUpADMM(int trial, int max_iter) {
@@ -322,8 +322,8 @@ namespace drake {
                     solver.setFeasibilityTolerance(1e-6);
                     
                     // use version with only center as a constraint
-                    solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
-                    //solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
+                    //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
+                    solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
                     
                     // add pitch constraint for consistency
                     solver.setStateUpperBound(state_upper_bound);
@@ -402,8 +402,8 @@ namespace drake {
                     solver.setFeasibilityTolerance(1e-6);
                     
                     // use version with only center as a constraint
-                    solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
-                    //solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
+                    //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
+                    solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, obstacle_radii.size() * 5, "interpolated obstacle constraints");
                     
                     // add pitch constraint for consistency
                     solver.setStateUpperBound(state_upper_bound);

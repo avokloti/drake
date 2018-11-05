@@ -260,6 +260,9 @@ namespace drake {
                 Eigen::VectorXd lambda_hat = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
                 Eigen::VectorXd y_prev;
                 Eigen::VectorXd lambda_prev;
+                Eigen::VectorXd next_y;
+                Eigen::VectorXd next_x;
+                double momentum_r = 3.0;
                 
                 // initialize solution vectors
                 solution_x = Eigen::MatrixXd::Zero(num_states, N);
@@ -303,7 +306,8 @@ namespace drake {
                 double feasibilityNorm;
                 double oldFeasibilityNorm;
                 double constraintNorm;
-                double full_objective;
+                double fullObjective;
+                double oldFullObjective;
                 
                 // cost matrix
                 Eigen::MatrixXd R = Eigen::MatrixXd::Zero(N * (num_states + num_inputs), N * (num_states + num_inputs));
@@ -573,7 +577,8 @@ namespace drake {
                     admm_update1_time_start = std::chrono::system_clock::now(); // start timer
                     
                     temp = y_hat - lambda_hat;
-                    x = proximalUpdateObjective(temp, R, rho1);
+                    //x = proximalUpdateObjective(temp, R, rho1);
+                    next_x = proximalUpdateObjective(temp, R, rho1);
                     
                     admm_update1_time_end = std::chrono::system_clock::now(); // end timer
                     admm_update1_timer = admm_update1_timer + (duration_cast<duration<double>>(admm_update1_time_end - admm_update1_time_start)).count();
@@ -581,30 +586,56 @@ namespace drake {
                     // second ADMM update
                     admm_update2_time_start = std::chrono::system_clock::now(); // start timer
                     
-                    temp = x + lambda;
-                    y = proximalUpdateConstraints(temp, M, c, G, h, rho1, rho2, rho3);
+                    temp = next_x + lambda;
+                    next_y = proximalUpdateConstraints(temp, M, c, G, h, rho1, rho2, rho3);
                     
                     admm_update2_time_end = std::chrono::system_clock::now(); // end timer
                     admm_update2_timer = admm_update2_timer + (duration_cast<duration<double>>(admm_update2_time_end - admm_update2_time_start)).count();
                     
-                    // dual update
-                    lambda = lambda_hat + x - y; // changed for accel
-                    
-                    // accelerated updates
-                    if (i > 0) {
-                        double accel_term = max(static_cast<double>(i)/static_cast<double>(i+50), 0.5);
-                        y_hat = y + accel_term * (y - y_prev);
-                        lambda_hat = lambda + accel_term * (lambda - lambda_prev);
-                    }
-                    
-                    // increase rho2 and rho3
-                    objective = y.transpose() * R * y;
-                    feasibilityVector = M * y - c;
+                    // calculate values for this iteration
+                    objective = next_y.transpose() * R * next_y;
+                    feasibilityVector = M * next_y - c;
                     feasibilityNorm = feasibilityVector.lpNorm<Eigen::Infinity>();
                     constraintVector = g; //previous: constraintVector = G * y - h;
                     constraintNorm = constraintVector.lpNorm<Eigen::Infinity>();
                     
-                    full_objective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
+                    fullObjective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
+                    
+                    // choose whether to accept or reject
+                    if (i > 0) {
+                        if ((fullObjective - oldFullObjective)/oldFullObjective > 10) {
+                            // REJECT
+                            momentum_r = momentum_r * 1.5;
+                            cout << "Iteration " << i << " -- REJECTED -- r increase to " << momentum_r << endl;
+                            //continue;
+                        } else if (oldFullObjective/fullObjective > 10) {
+                            // Good iteration relative to previous
+                            //momentum_r = momentum_r * 1.2;
+                            y_prev = next_y;
+                            lambda_prev = lambda_hat + next_x - next_y;
+                            cout << "Iteration " << i << " -- r decreased to " << momentum_r << endl;
+                            //continue;
+                        } else {
+                            momentum_r = max(3.0, momentum_r * 0.9);
+                        }
+                    }
+                    
+                    if (momentum_r > 10000) {
+                        return;
+                    }
+                    
+                    // dual update
+                    y = next_y;
+                    x = next_x;
+                    lambda = lambda_hat + x - y; // changed for accel
+                    
+                    // accelerated updates
+                    if (i > 0) {
+                        //double accel_term = min(static_cast<double>(i)/static_cast<double>(i + momentum_r), 0.5);
+                        double accel_term = static_cast<double>(i)/static_cast<double>(i + momentum_r);
+                        y_hat = y + accel_term * (y - y_prev);
+                        lambda_hat = lambda + accel_term * (lambda - lambda_prev);
+                    }
                     
                     // increase rho2
                     rho2 = min(rho2 * rho2_increase_rate, rho_max);
@@ -617,13 +648,14 @@ namespace drake {
                     
                     // print / compute info
                     if (i % 1 == 0) {
-                        cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << full_objective << "\n";
+                        cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << fullObjective << "\n";
                     }
                     
                     tripletsM.clear();
                     tripletsG.clear();
                     oldFeasibilityNorm = feasibilityNorm;
                     oldObjective = objective;
+                    oldFullObjective = fullObjective;
                     lambda_prev = lambda;
                     y_prev = y;
                     i++;
