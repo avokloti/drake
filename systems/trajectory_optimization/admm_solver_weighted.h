@@ -39,7 +39,7 @@ namespace drake {
                     constraint_flag flag;
                     int length;
                     std::string constraint_name;
-                    double weight;
+                    Eigen::VectorXd weights;
                 };
                 
                 struct double_constraint_struct {
@@ -47,7 +47,7 @@ namespace drake {
                     constraint_flag flag;
                     int length;
                     std::string constraint_name;
-                    double weight;
+                    Eigen::VectorXd weights;
                 };
                 
                 

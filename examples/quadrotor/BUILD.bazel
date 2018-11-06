@@ -163,6 +163,7 @@ drake_cc_binary(
 drake_cc_binary(
     name = "run_quadrotor_admm_accel_ellipses",
     srcs = ["run_quadrotor_admm_accel_ellipses.cc"],
+    copts = ["-Wno-error=unused-function"],
     deps = [
         ":quadrotor_plant",
 	"//math:wrap_to",

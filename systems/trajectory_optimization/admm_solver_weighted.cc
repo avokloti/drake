@@ -4,6 +4,8 @@
 
 #include "drake/systems/trajectory_optimization/admm_solver_weighted.h"
 
+typedef Array<bool,Dynamic,1> ArrayXb;
+
 using namespace std::chrono;
 using namespace std::placeholders;
 
@@ -92,7 +94,8 @@ namespace drake {
                     
                     // make constraint (uses lambda to bind "this" object to the member function)
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateUpperBound", 1.0};
+                    
+                    struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateUpperBound", Eigen::VectorXd::Ones(num_states)};
                     
                     // add constraint to list
                     single_constraints_list.push_back(cf);
@@ -109,7 +112,8 @@ namespace drake {
                     
                     // make constraint
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateLowerBound", 1.0};
+                    
+                    struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateLowerBound", Eigen::VectorXd::Ones(num_states)};
                     
                     // add constraint to list
                     single_constraints_list.push_back(cf);
@@ -126,7 +130,8 @@ namespace drake {
                     
                     // make constraint
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputUpperBound", 1.0};
+                    
+                    struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputUpperBound", Eigen::VectorXd::Ones(num_inputs)};
                     
                     // add constraint to list
                     single_constraints_list.push_back(cf);
@@ -143,7 +148,8 @@ namespace drake {
                     
                     // make constraint
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputLowerBound", 1.0};
+                    
+                    struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputLowerBound", Eigen::VectorXd::Ones(num_inputs)};
                     
                     // add constraint to list
                     single_constraints_list.push_back(cf);
@@ -203,7 +209,7 @@ namespace drake {
                 
                 void AdmmSolverWeighted::addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
-                    struct single_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name, 1.0};
+                    struct single_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name, Eigen::VectorXd::Ones(constraint_size)};
                     
                     // put onto overall constraint list
                     single_constraints_list.push_back(cf);
@@ -211,8 +217,9 @@ namespace drake {
                 }
                 
                 void AdmmSolverWeighted::addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
+                    
                     // make individual constraint structure
-                    struct single_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name, 1.0};
+                    struct single_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name, Eigen::VectorXd::Ones(constraint_size)};
                     
                     // put onto overall constraint list
                     single_constraints_list.push_back(cf);
@@ -221,7 +228,7 @@ namespace drake {
                 
                 void AdmmSolverWeighted::addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
-                    struct double_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name, 1.0};
+                    struct double_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name, Eigen::VectorXd::Ones(constraint_size)};
                     
                     // put onto overall constraint list
                     double_constraints_list.push_back(cf);
@@ -230,7 +237,7 @@ namespace drake {
                 
                 void AdmmSolverWeighted::addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
-                    struct double_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name, 1.0};
+                    struct double_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name, Eigen::VectorXd::Ones(constraint_size)};
                     
                     // put onto overall constraint list
                     double_constraints_list.push_back(cf);
@@ -285,7 +292,6 @@ namespace drake {
                     // allocate array for g and h
                     Eigen::VectorXd g = Eigen::VectorXd::Zero(num_constraints * N);
                     Eigen::VectorXd h = Eigen::VectorXd::Zero(num_constraints * N);
-                    Eigen::VectorXd weights = Eigen::VectorXd::Zero(num_constraints);
                     
                     // allocate memory for midpoint values
                     Eigen::VectorXd mid_state(num_states);
@@ -334,7 +340,6 @@ namespace drake {
                             return;
                         }
                     }
-                    std:: cout << "hi" << endl;
                     
                     int i = 0;
                     while (i < max_iter && (i < 1 || feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility || constraintVector.lpNorm<Eigen::Infinity>() > tol_constraints)) {
@@ -456,13 +461,17 @@ namespace drake {
                          }
                          } */
                         
+                        //cout << "Iteration " << i << " --------------------------------" << endl;
+                        
                         int running_constraint_counter = 0;
                         
                         for (int iii = 0; iii < int(single_constraints_list.size()); iii++) {
                             // get constraint function
                             single_constraint_struct cf = single_constraints_list[iii];
                             
-                            double constraint_weight_check = 0;
+                            //cout << cf.constraint_name << " --------------------------------" << endl;
+                            
+                            Eigen::ArrayXd active_constraints = Eigen::ArrayXd::Zero(cf.length);
                             
                             // iterate and apply constraint to all points
                             for (int ii = 0; ii < N; ii++) {
@@ -479,9 +488,9 @@ namespace drake {
                                 cf.function(ii, state, input, single_g, single_dg_x, single_dg_u);
                                 
                                 // new weight update?
-                                single_g = single_g * cf.weight;
-                                single_dg_x = single_dg_x * cf.weight;
-                                single_dg_u = single_dg_u * cf.weight;
+                                single_g = single_g.cwiseProduct(cf.weights);
+                                single_dg_x = cf.weights.asDiagonal() * single_dg_x;
+                                single_dg_u = cf.weights.asDiagonal() * single_dg_u;
                                 
                                 if (cf.flag == INEQUALITY) {
                                     for (int iiii = 0; iiii < cf.length; iiii++) {
@@ -494,9 +503,11 @@ namespace drake {
                                             //std::cout << "State: " << state << endl;
                                         }
                                     }
-                                    constraint_weight_check = constraint_weight_check + (single_g.array() > 0).count();
+                                    active_constraints = active_constraints + (single_g.array() > 0).cast<double>();
+                                    //std::cout << "Active constraints:\n" << active_constraints << endl;
                                 } else {
-                                    constraint_weight_check = constraint_weight_check + (single_g.array() != 0).count();
+                                    active_constraints = active_constraints + (single_g.array() != 0).cast<double>();
+                                    //std::cout << "Active constraints:\n" << active_constraints << endl;
                                 }
                                 
                                 g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
@@ -504,10 +515,12 @@ namespace drake {
                             }
                             
                             // if constraint was active this iteration
-                            if (constraint_weight_check > 0) {
-                                cf.weight = min(cf.weight * rho3_increase_rate, rho_max);
-                                cout << "Updating weight of constraint " << cf.constraint_name << " to " << cf.weight << endl;
-                                single_constraints_list[iii] = cf;
+                            for (int ii = 0; ii < cf.length; ii++) {
+                                if (active_constraints[ii] > 0) {
+                                //cf.weight = min(cf.weight * rho3_increase_rate, rho_max);
+                                    single_constraints_list[iii].weights[ii] = min(cf.weights[ii] * rho3_increase_rate, 1e9/rho3);
+                                    //cout << "Updating weight of " << cf.constraint_name << " at " << ii << " to " << single_constraints_list[iii].weights[ii] << endl;
+                                }
                             }
                             running_constraint_counter = running_constraint_counter + cf.length;
                         }
@@ -516,7 +529,9 @@ namespace drake {
                             // get constraint function
                             double_constraint_struct cf = double_constraints_list[iii];
                             
-                            double constraint_weight_check = 0;
+                            //cout << cf.constraint_name << " --------------------------------" << endl;
+                            
+                            Eigen::ArrayXd active_constraints = Eigen::ArrayXd::Zero(cf.length);
                             
                             for (int ii = 0; ii < N-1; ii++) {
                                 // get current state/input
@@ -543,11 +558,11 @@ namespace drake {
                                 cf.function(ii, state1, input1, state2, input2, single_g, single_dg_x1, single_dg_u1, single_dg_x2, single_dg_u2);
                                 
                                 // new weight update?
-                                single_g = single_g * cf.weight;
-                                single_dg_x1 = single_dg_x1 * cf.weight;
-                                single_dg_u1 = single_dg_u1 * cf.weight;
-                                single_dg_x2 = single_dg_x2 * cf.weight;
-                                single_dg_u2 = single_dg_u2 * cf.weight;
+                                single_g = single_g.cwiseProduct(cf.weights);
+                                single_dg_x1 = cf.weights.asDiagonal() * single_dg_x1;
+                                single_dg_u1 = cf.weights.asDiagonal() * single_dg_u1;
+                                single_dg_x2 = cf.weights.asDiagonal() * single_dg_x2;
+                                single_dg_u2 = cf.weights.asDiagonal() * single_dg_u2;
                                 
                                 if (cf.flag == INEQUALITY) {
                                     for (int iiii = 0; iiii < cf.length; iiii++) {
@@ -559,9 +574,11 @@ namespace drake {
                                             single_dg_u2.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u2.block(iiii, 0, 1, num_inputs);
                                         }
                                     }
-                                    constraint_weight_check = constraint_weight_check + (single_g.array() > 0).count();
+                                    active_constraints = active_constraints + (single_g.array() > 0).cast<double>();
+                                    //std::cout << "Active constraints:\n" << active_constraints << endl;
                                 } else {
-                                    constraint_weight_check = constraint_weight_check + (single_g.array() != 0).count();
+                                    active_constraints = active_constraints + (single_g.array() != 0).cast<double>();
+                                    //std::cout << "Active constraints:\n" << active_constraints << endl;
                                 }
                                 
                                 g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
@@ -571,13 +588,33 @@ namespace drake {
                             }
                             
                             // if constraint was active this iteration
-                            if (constraint_weight_check > 0) {
-                                cf.weight = min(cf.weight * rho3_increase_rate, 1e9/rho3);
-                                cout << "Updating weight of constraint " << cf.constraint_name << " to " << cf.weight << endl;
+                            for (int ii = 0; ii < cf.length; ii++) {
+                                if (active_constraints[ii] > 0) {
+                                    //cf.weight = min(cf.weight * rho3_increase_rate, rho_max);
+                                    double_constraints_list[iii].weights[ii] = min(cf.weights[ii] * rho3_increase_rate, 1e9/rho3);
+                                    //cout << "Updating weight of " << cf.constraint_name << " at " << ii << " to " << double_constraints_list[iii].weights[ii] << endl;
+                                    //cout << "Updating weight of " << cf.constraint_name << " to " << cf.weight << endl;
+                                }
                             }
                             
                             running_constraint_counter = running_constraint_counter + cf.length;
                         }
+                        
+                        // iterate through all constraints and print weights
+                        /*
+                        for (int iii = 0; iii < int(single_constraints_list.size()); iii++) {
+                            // get constraint function
+                            single_constraint_struct cf = single_constraints_list[iii];
+                            cout << "Weight of constraint " << cf.constraint_name << " is " << cf.weight << endl;
+                        }
+                         
+                        for (int iii = 0; iii < int(double_constraints_list.size()); iii++) {
+                            // get constraint function
+                            double_constraint_struct cf = double_constraints_list[iii];
+                            cout << "Weight of constraint " << cf.constraint_name << " is " << cf.weight << endl;
+                        } */
+                        cout << "weights: " << double_constraints_list[0].weights.transpose() << endl;
+                        
                         
                         G.setFromTriplets(tripletsG.begin(), tripletsG.end());
                         

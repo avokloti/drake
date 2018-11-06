@@ -390,6 +390,7 @@ namespace drake {
                     
                     // initialize solver
                     systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
+                    //systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 1000);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -632,8 +633,8 @@ namespace drake {
                     
                     solveSwingUpADMM(0, max_iter);
                     solveSwingUpAccelADMM(0, max_iter);
-                    snopt_results[0] = solveSwingUpSNOPT(0, max_iter);
-                    ipopt_results[0] = solveSwingUpIPOPT(0, max_iter);
+                    //snopt_results[0] = solveSwingUpSNOPT(0, max_iter);
+                    //ipopt_results[0] = solveSwingUpIPOPT(0, max_iter);
                     
                     return 0;
                 }
