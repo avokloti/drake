@@ -178,6 +178,26 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "accel_weighted_admm_solver",
+    srcs = [
+        "accel_weighted_admm_solver.cc",
+    ],
+    hdrs = [
+        "accel_weighted_admm_solver.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+    ],
+)
+
 # === test/ ===
 
 drake_cc_googletest(

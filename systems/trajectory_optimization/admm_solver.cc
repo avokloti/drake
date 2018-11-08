@@ -31,7 +31,7 @@ namespace drake {
                 
                 rho1_decrease_rate = 1.02; // decrease by a constant factor if constraints are satisfied
                 rho2_increase_rate = 1.02; // increases by a constant factor with every iteration
-                rho3_increase_rate = 1.02; // increases by a constant factor with every iteration
+                rho3_increase_rate = 1.05; // increases by a constant factor with every iteration
                 rho_max = 1e9; // maximum value for rho2 and rho3
                 rho1_min = 100;
                 
@@ -595,7 +595,7 @@ namespace drake {
                     
                     // increase rho2
                     rho2 = min(rho2 * rho2_increase_rate, rho_max);
-                    //rho3 = min(rho3 * rho3_increase_rate, rho_max);
+                    rho3 = min(rho3 * rho3_increase_rate, rho_max);
                     
                     // decrease rho1 if constraints are mostly satisfied
                     if (i > 2 && (feasibilityNorm - oldFeasibilityNorm < 0.001)) {

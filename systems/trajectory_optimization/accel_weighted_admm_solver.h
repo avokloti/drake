@@ -23,7 +23,7 @@ using namespace Eigen;
 namespace drake {
     namespace systems {
         namespace trajectory_optimization {
-            namespace admm_solver_weighted {
+            namespace accel_weighted_admm_solver {
                 
                 enum constraint_flag {EQUALITY, INEQUALITY};
                 
@@ -50,7 +50,7 @@ namespace drake {
                 
                 
                 
-                class AdmmSolverWeighted {
+                class AccelWeightedAdmmSolver {
                     /* --------- fields --------- */
                 private:
                     int N; // number of knot points
@@ -116,7 +116,7 @@ namespace drake {
                     /* --------- functions --------- */
                 public:
                     // constructor:
-                    AdmmSolverWeighted(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter);
+                    AccelWeightedAdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter);
                     
                     // typedef for dynamics function pointer
                     //typedef void (*function_pointer)(double, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::VectorXd>, Eigen::Ref<Eigen::MatrixXd>, Eigen::Ref<Eigen::MatrixXd>);
@@ -177,7 +177,7 @@ namespace drake {
                     void stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
                     void stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u);
                 };
-            } //namespace accel_admm_solver
+            } //namespace accel_weighted_admm_solver
         } // namespace trajectory_optimization
     } // namespace systems
 } // namespace drake

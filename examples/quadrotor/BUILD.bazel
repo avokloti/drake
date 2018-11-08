@@ -177,6 +177,7 @@ drake_cc_binary(
         "//systems/trajectory_optimization:admm_solver",
         "//systems/trajectory_optimization:accel_admm_solver",
 	"//systems/trajectory_optimization:admm_solver_weighted",
+	"//systems/trajectory_optimization:accel_weighted_admm_solver",
 	"//solvers:snopt_solver",
 	"//solvers:ipopt_solver",
         "@gflags",

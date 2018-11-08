@@ -2,9 +2,7 @@
 
 // run as: g++ -I /usr/local/include/eigen3/ -O2 solveADMMconstraints.cpp
 
-#include "drake/systems/trajectory_optimization/admm_solver_weighted.h"
-
-typedef Array<bool,Dynamic,1> ArrayXb;
+#include "drake/systems/trajectory_optimization/accel_weighted_admm_solver.h"
 
 using namespace std::chrono;
 using namespace std::placeholders;
@@ -12,11 +10,11 @@ using namespace std::placeholders;
 namespace drake {
     namespace systems {
         namespace trajectory_optimization {
-            namespace admm_solver_weighted {
+            namespace accel_weighted_admm_solver {
                 
                 /* ---------------------------------------------- SOLVER INITIALIZATION ---------------------------------------------- */
                 
-                AdmmSolverWeighted::AdmmSolverWeighted(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter) {
+                AccelWeightedAdmmSolver::AccelWeightedAdmmSolver(systems::System<double>* par_system, Eigen::VectorXd par_x0, Eigen::VectorXd par_xf, double par_T, int par_N, int par_max_iter) {
                     
                     system = par_system;
                     context = system->CreateDefaultContext();
@@ -66,27 +64,27 @@ namespace drake {
                     solve_flag = false;
                 }
                 
-                void AdmmSolverWeighted::setRho1(double rho) {
+                void AccelWeightedAdmmSolver::setRho1(double rho) {
                     initial_rho1 = rho;
                 }
                 
-                void AdmmSolverWeighted::setRho2(double rho) {
+                void AccelWeightedAdmmSolver::setRho2(double rho) {
                     initial_rho2 = rho;
                 }
                 
-                void AdmmSolverWeighted::setRho3(double rho) {
+                void AccelWeightedAdmmSolver::setRho3(double rho) {
                     initial_rho3 = rho;
                 }
                 
-                void AdmmSolverWeighted::setFeasibilityTolerance(double tol) {
+                void AccelWeightedAdmmSolver::setFeasibilityTolerance(double tol) {
                     tol_feasibility = tol;
                 }
                 
-                void AdmmSolverWeighted::setConstraintTolerance(double tol) {
+                void AccelWeightedAdmmSolver::setConstraintTolerance(double tol) {
                     tol_constraints = tol;
                 }
                 
-                void AdmmSolverWeighted::setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
+                void AccelWeightedAdmmSolver::setStateUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
                     if (bound.size() != num_states) {
                         cerr << "State upper bound must have length equal to the number of states.\n";
                     }
@@ -94,7 +92,6 @@ namespace drake {
                     
                     // make constraint (uses lambda to bind "this" object to the member function)
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    
                     struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateUpperBound"};
                     
                     // add constraint to list
@@ -104,7 +101,7 @@ namespace drake {
                     num_constraints = num_constraints + num_states;
                 }
                 
-                void AdmmSolverWeighted::setStateLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
+                void AccelWeightedAdmmSolver::setStateLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
                     if (bound.size() != num_states) {
                         cerr << "State lower bound must have length equal to the number of states.\n";
                     }
@@ -112,7 +109,6 @@ namespace drake {
                     
                     // make constraint
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){stateLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    
                     struct single_constraint_struct cf = {f, INEQUALITY, num_states, "stateLowerBound"};
                     
                     // add constraint to list
@@ -122,7 +118,7 @@ namespace drake {
                     num_constraints = num_constraints + num_states;
                 }
                 
-                void AdmmSolverWeighted::setInputUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
+                void AccelWeightedAdmmSolver::setInputUpperBound(Eigen::Ref<Eigen::VectorXd> bound) {
                     if (bound.size() != num_inputs) {
                         cerr << "Input upper bound must have length equal to the number of inputs.\n";
                     }
@@ -130,7 +126,6 @@ namespace drake {
                     
                     // make constraint
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputUpperBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    
                     struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputUpperBound"};
                     
                     // add constraint to list
@@ -140,7 +135,7 @@ namespace drake {
                     num_constraints = num_constraints + num_inputs;
                 }
                 
-                void AdmmSolverWeighted::setInputLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
+                void AccelWeightedAdmmSolver::setInputLowerBound(Eigen::Ref<Eigen::VectorXd> bound) {
                     if (bound.size() != num_inputs) {
                         cerr << "Input lower bound must have length equal to the number of inputs.\n";
                     }
@@ -148,7 +143,6 @@ namespace drake {
                     
                     // make constraint
                     single_constraint_function f = [this](double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u){inputLowerBoundConstraint(t, x, u, g, dg_x, dg_u);};
-                    
                     struct single_constraint_struct cf = {f, INEQUALITY, num_inputs, "inputLowerBound"};
                     
                     // add constraint to list
@@ -158,15 +152,15 @@ namespace drake {
                     num_constraints = num_constraints + num_inputs;
                 }
                 
-                Eigen::MatrixXd AdmmSolverWeighted::getSolutionStateTrajectory() {
+                Eigen::MatrixXd AccelWeightedAdmmSolver::getSolutionStateTrajectory() {
                     return solution_x;
                 }
                 
-                Eigen::MatrixXd AdmmSolverWeighted::getSolutionInputTrajectory() {
+                Eigen::MatrixXd AccelWeightedAdmmSolver::getSolutionInputTrajectory() {
                     return solution_u;
                 }
                 
-                trajectories::PiecewisePolynomial<double> AdmmSolverWeighted::reconstructStateTrajectory() {
+                trajectories::PiecewisePolynomial<double> AccelWeightedAdmmSolver::reconstructStateTrajectory() {
                     // check if problem has been solved
                     if (!solve_flag) {
                         cerr << "Cannot reconstruct trajectory -- problem has not been solved successfully.\n";
@@ -191,7 +185,7 @@ namespace drake {
                 }
                 
                 
-                trajectories::PiecewisePolynomial<double> AdmmSolverWeighted::reconstructInputTrajectory() {
+                trajectories::PiecewisePolynomial<double> AccelWeightedAdmmSolver::reconstructInputTrajectory() {
                     // check if problem has been solved
                     if (!solve_flag) {
                         cerr << "Cannot reconstruct trajectory -- problem has not been solved successfully.\n";
@@ -207,7 +201,7 @@ namespace drake {
                     return trajectories::PiecewisePolynomial<double>::FirstOrderHold(times_vec, inputs);
                 }
                 
-                void AdmmSolverWeighted::addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
+                void AccelWeightedAdmmSolver::addInequalityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
                     struct single_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
                     
@@ -216,8 +210,7 @@ namespace drake {
                     num_constraints = num_constraints + constraint_size;
                 }
                 
-                void AdmmSolverWeighted::addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
-                    
+                void AccelWeightedAdmmSolver::addEqualityConstraintToAllKnotPoints(single_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
                     struct single_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name};
                     
@@ -226,7 +219,7 @@ namespace drake {
                     num_constraints = num_constraints + constraint_size;
                 }
                 
-                void AdmmSolverWeighted::addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
+                void AccelWeightedAdmmSolver::addInequalityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
                     struct double_constraint_struct cf = {f, INEQUALITY, constraint_size, constraint_name};
                     
@@ -235,7 +228,7 @@ namespace drake {
                     num_constraints = num_constraints + constraint_size;
                 }
                 
-                void AdmmSolverWeighted::addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
+                void AccelWeightedAdmmSolver::addEqualityConstraintToConsecutiveKnotPoints(double_constraint_function f, int constraint_size, std::string constraint_name) {
                     // make individual constraint structure
                     struct double_constraint_struct cf = {f, EQUALITY, constraint_size, constraint_name};
                     
@@ -248,7 +241,7 @@ namespace drake {
                 
                 /* ---------------------------------------------- SOLVE METHOD ---------------------------------------------- */
                 
-                void AdmmSolverWeighted::solve(Eigen::Ref<Eigen::VectorXd> y) {
+                void AccelWeightedAdmmSolver::solve(Eigen::Ref<Eigen::VectorXd> y) {
                     
                     std::cout << "num states (in ADMM): " << num_states << endl;
                     std::cout << "num inputs (in ADMM): " << num_inputs << endl;
@@ -261,6 +254,15 @@ namespace drake {
                     // allocate array for x, y, lambda
                     Eigen::VectorXd x(y);
                     Eigen::VectorXd lambda = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                    
+                    // variables for accelerated version
+                    Eigen::VectorXd y_hat = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                    Eigen::VectorXd lambda_hat = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                    Eigen::VectorXd y_prev;
+                    Eigen::VectorXd lambda_prev;
+                    Eigen::VectorXd next_y;
+                    Eigen::VectorXd next_x;
+                    double momentum_r = 5.0;
                     
                     // initialize solution vectors
                     solution_x = Eigen::MatrixXd::Zero(num_states, N);
@@ -307,7 +309,8 @@ namespace drake {
                     double feasibilityNorm;
                     double oldFeasibilityNorm;
                     double constraintNorm;
-                    double full_objective;
+                    double fullObjective;
+                    double oldFullObjective;
                     
                     // cost matrix
                     Eigen::MatrixXd R = Eigen::MatrixXd::Zero(N * (num_states + num_inputs), N * (num_states + num_inputs));
@@ -335,11 +338,9 @@ namespace drake {
                     double rho2 = initial_rho2;
                     double rho3 = initial_rho3;
                     
-                    IOFormat CleanFmt(6, 0, ", ", "\n");
-                    
                     // open output file for writing y
                     if (DEBUG) {
-                        output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/accel/single_run_weighted_y.txt");
+                        output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/accel/single_run_accel_weighted_admm_y.txt");
                         if (!output_file.is_open()) {
                             std::cerr << "Problem opening output file.";
                             return;
@@ -466,17 +467,11 @@ namespace drake {
                          }
                          } */
                         
-                        //cout << "Iteration " << i << " --------------------------------" << endl;
-                        
                         int running_constraint_counter = 0;
                         
                         for (int iii = 0; iii < int(single_constraints_list.size()); iii++) {
                             // get constraint function
-                            single_constraint_struct cf = single_constraints_list[iii];
-                            
-                            //cout << cf.constraint_name << ", " << cf.flag << " --------------------------------" << endl;
-                            
-                            //Eigen::ArrayXd active_constraints = Eigen::ArrayXd::Zero(cf.length);
+                            single_constraint_struct cf = single_constraints_list.at(iii);
                             
                             // iterate and apply constraint to all points
                             for (int ii = 0; ii < N; ii++) {
@@ -499,19 +494,18 @@ namespace drake {
                                 single_dg_x = current_weights.asDiagonal() * single_dg_x;
                                 single_dg_u = current_weights.asDiagonal() * single_dg_u;
                                 
-                                //cout << "cf flag is " << (cf.flag) << endl;
                                 if (cf.flag == INEQUALITY) {
                                     for (int iiii = 0; iiii < cf.length; iiii++) {
                                         if (single_g[iiii] <= 0) {
                                             single_g[iiii] = 0;
-                                            //cout << "in loop at " << iiii << endl;
                                             single_dg_x.block(iiii, 0, 1, num_states) = 0 * single_dg_x.block(iiii, 0, 1, num_states);
                                             single_dg_u.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u.block(iiii, 0, 1, num_inputs);
+                                        } else {
+                                            //std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ".\n";
+                                            //std::cout << "State: " << state << endl;
                                         }
                                     }
                                 }
-                                
-                                // for each constraint, check if constraint is active and update weights in that case
                                 
                                 for (int iv = 0; iv < cf.length; iv++) {
                                     // index of constraint
@@ -522,23 +516,15 @@ namespace drake {
                                     }
                                 }
                                 
-                                //cout << "single g after multiply: " << single_g.transpose().format(CleanFmt) << endl;
-                                //cout << "SINGLE G NORM: " << single_g.lpNorm<Eigen::Infinity>() << endl;
-                                //cout << "G NORM: " << g.lpNorm<Eigen::Infinity>() << endl;
-                                
-                                //cout << "Placing constraints in index [" << ii * num_constraints + running_constraint_counter << ", " << ii * num_constraints + running_constraint_counter + cf.length - 1 << "]" << endl;
                                 g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
                                 placeinG(&tripletsG, single_dg_x, single_dg_u, ii, running_constraint_counter, cf.length);
                             }
-                            
                             running_constraint_counter = running_constraint_counter + cf.length;
                         }
                         
                         for (int iii = 0; iii < int(double_constraints_list.size()); iii++) {
                             // get constraint function
-                            double_constraint_struct cf = double_constraints_list[iii];
-                            
-                            //cout << cf.constraint_name << " --------------------------------" << endl;
+                            double_constraint_struct cf = double_constraints_list.at(iii);
                             
                             for (int ii = 0; ii < N-1; ii++) {
                                 // get current state/input
@@ -555,6 +541,11 @@ namespace drake {
                                 Eigen::MatrixXd single_dg_u1 = Eigen::MatrixXd::Zero(cf.length, num_inputs);
                                 Eigen::MatrixXd single_dg_x2 = Eigen::MatrixXd::Zero(cf.length, num_states);
                                 Eigen::MatrixXd single_dg_u2 = Eigen::MatrixXd::Zero(cf.length, num_inputs);
+                                
+                                //std::cout << "single dg x1:\n" << single_dg_x1;
+                                //std::cout << "single dg u1:\n" << single_dg_u1;
+                                //std::cout << "single dg x2:\n" << single_dg_x2;
+                                //std::cout << "single dg u2:\n" << single_dg_u2;
                                 
                                 // evaluate constraints
                                 cf.function(ii, state1, input1, state2, input2, single_g, single_dg_x1, single_dg_u1, single_dg_x2, single_dg_u2);
@@ -582,12 +573,6 @@ namespace drake {
                                     }
                                 }
                                 
-                                //cout << "single g after multiply: " << single_g.transpose().format(CleanFmt) << endl;
-                                //cout << "SINGLE G NORM: " << single_g.lpNorm<Eigen::Infinity>() << endl;
-                                //cout << "G NORM: " << g.lpNorm<Eigen::Infinity>() << endl;
-                                
-                                // for each constraint, check if constraint is active and update weights in that case
-                                
                                 for (int iv = 0; iv < cf.length; iv++) {
                                     // index of constraint
                                     int index = ii * num_constraints + running_constraint_counter + iv;
@@ -597,50 +582,29 @@ namespace drake {
                                     }
                                 }
                                 
-                                //cout << "Placing constraints in index [" << ii * num_constraints + running_constraint_counter << ", " << ii * num_constraints + running_constraint_counter + cf.length - 1 << "]" << endl;
                                 g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
                                 placeinG(&tripletsG, single_dg_x1, single_dg_u1, ii, running_constraint_counter, cf.length);
                                 placeinG(&tripletsG, single_dg_x2, single_dg_u2, ii+1, running_constraint_counter, cf.length);
                                 
                             }
-                            
                             running_constraint_counter = running_constraint_counter + cf.length;
                         }
                         
-                        // iterate through all constraints and print weights
-                        /*
-                        for (int iii = 0; iii < int(single_constraints_list.size()); iii++) {
-                            // get constraint function
-                            single_constraint_struct cf = single_constraints_list[iii];
-                            cout << "Weight of constraint " << cf.constraint_name << " is " << cf.weight << endl;
-                        }
-                         
-                        for (int iii = 0; iii < int(double_constraints_list.size()); iii++) {
-                            // get constraint function
-                            double_constraint_struct cf = double_constraints_list[iii];
-                            cout << "Weight of constraint " << cf.constraint_name << " is " << cf.weight << endl;
-                        } */
-                        //cout << "weights: " << weights.transpose() << endl;
-                        
-                        //cout <<
                         G.setFromTriplets(tripletsG.begin(), tripletsG.end());
                         
                         //std::cout << G << endl;
                         
                         // print to output file
-                        
-                        //if (i == 0) {
-                        
-                            output_G.open("/Users/ira/Documents/drake/examples/quadrotor/output/weighted/g_unweighted.txt", std::ios_base::app);
-                            if (!output_G.is_open()) {
-                                std::cerr << "Problem opening weights output file." << endl;
-                            } else {
-                                //cout << "size of g is:" << g.rows() << "  " << g.cols() << endl;
-                                output_G << g.transpose().format(CleanFmt) << endl;
-                            }
-                            output_G.close();
-                        
-                        //}
+                        /*
+                         if (i == 284) {
+                         output_G.open("/Users/ira/Documents/drake/examples/quadrotor/output/G.txt");
+                         if (!output_G.is_open()) {
+                         std::cerr << "Problem opening G output file." << endl;
+                         } else {
+                         output_G << G;
+                         }
+                         output_G.close();
+                         } */
                         
                         //std::cout << "\nG rows and cols:\n" << G.rows() << " " << G.cols() << "\n";
                         //std::cout << "\nG block:\n" << G.block(num_constraints, num_states, num_constraints, 2 * num_states) << "\n";
@@ -651,8 +615,9 @@ namespace drake {
                         // first ADMM update
                         admm_update1_time_start = std::chrono::system_clock::now(); // start timer
                         
-                        temp = y - lambda;
-                        x = proximalUpdateObjective(temp, R, rho1);
+                        temp = y_hat - lambda_hat;
+                        //x = proximalUpdateObjective(temp, R, rho1);
+                        next_x = proximalUpdateObjective(temp, R, rho1);
                         
                         admm_update1_time_end = std::chrono::system_clock::now(); // end timer
                         admm_update1_timer = admm_update1_timer + (duration_cast<duration<double>>(admm_update1_time_end - admm_update1_time_start)).count();
@@ -660,22 +625,60 @@ namespace drake {
                         // second ADMM update
                         admm_update2_time_start = std::chrono::system_clock::now(); // start timer
                         
-                        temp = x + lambda;
-                        y = proximalUpdateConstraints(temp, M, c, G, h, rho1, rho2, rho3);
+                        temp = next_x + lambda;
+                        next_y = proximalUpdateConstraints(temp, M, c, G, h, rho1, rho2, rho3);
                         
                         admm_update2_time_end = std::chrono::system_clock::now(); // end timer
                         admm_update2_timer = admm_update2_timer + (duration_cast<duration<double>>(admm_update2_time_end - admm_update2_time_start)).count();
                         
-                        // dual update
-                        lambda = lambda + x - y;
-                        
-                        // increase rho2 and rho3
-                        objective = y.transpose() * R * y;
-                        feasibilityVector = M * y - c;
+                        // calculate values for this iteration
+                        objective = next_y.transpose() * R * next_y;
+                        feasibilityVector = M * next_y - c;
                         feasibilityNorm = feasibilityVector.lpNorm<Eigen::Infinity>();
                         constraintVector = g; //previous: constraintVector = G * y - h;
                         constraintNorm = constraintVector.lpNorm<Eigen::Infinity>();
-                        full_objective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
+                        
+                        fullObjective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
+                        
+                        // choose whether to accept or reject
+                        /*
+                         if (i > 0) {
+                         if ((fullObjective - oldFullObjective)/oldFullObjective > 10) {
+                         // REJECT
+                         momentum_r = momentum_r * 1.5;
+                         cout << "Iteration " << i << " -- REJECTED -- r increase to " << momentum_r << endl;
+                         //continue;
+                         } else if (oldFullObjective/fullObjective > 10) {
+                         // Good iteration relative to previous
+                         //momentum_r = momentum_r * 1.2;
+                         y_prev = next_y;
+                         lambda_prev = lambda_hat + next_x - next_y;
+                         cout << "Iteration " << i << " -- r decreased to " << momentum_r << endl;
+                         //continue;
+                         } else {
+                         momentum_r = max(3.0, momentum_r * 0.9);
+                         }
+                         } */
+                        
+                        //y_prev = next_y;
+                        //lambda_prev = lambda_hat + next_x - next_y;
+                        
+                        if (momentum_r > 10000) {
+                            return;
+                        }
+                        
+                        // dual update
+                        y = next_y;
+                        x = next_x;
+                        lambda = lambda_hat + x - y; // changed for accel
+                        
+                        // accelerated updates
+                        if (i > 0) {
+                            //double accel_term = min(static_cast<double>(i)/static_cast<double>(i + momentum_r), 0.5);
+                            double accel_term = static_cast<double>(i)/static_cast<double>(i + momentum_r);
+                            y_hat = y + accel_term * (y - y_prev);
+                            lambda_hat = lambda + accel_term * (lambda - lambda_prev);
+                        }
                         
                         // increase rho2
                         rho2 = min(rho2 * rho2_increase_rate, rho_max);
@@ -687,14 +690,17 @@ namespace drake {
                         }
                         
                         // print / compute info
-                        if (i % 20 == 0) {
-                            cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << full_objective << "\n";
+                        if (i % 1 == 0) {
+                            cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << fullObjective << "\n";
                         }
                         
                         tripletsM.clear();
                         tripletsG.clear();
                         oldFeasibilityNorm = feasibilityNorm;
                         oldObjective = objective;
+                        oldFullObjective = fullObjective;
+                        lambda_prev = lambda;
+                        y_prev = y;
                         i++;
                     }
                     
@@ -719,7 +725,10 @@ namespace drake {
                     cout << "Total time spent in second ADMM update: " << admm_update2_timer << " (sec)\n";
                     cout << "Total update time: " << admm_update1_timer + admm_update2_timer << " (sec)\n";
                     solve_flag = true;
-                    output_file.close();
+                    
+                    if (DEBUG) {
+                        output_file.close();
+                    }
                 }
                 
                 
@@ -728,7 +737,7 @@ namespace drake {
                 
                 // really naive implementation... whatever
                 /*
-                 int AdmmSolverWeighted::nonzeroCount(Eigen::Ref<Eigen::MatrixXd> A) {
+                 int AccelWeightedAdmmSolver::nonzeroCount(Eigen::Ref<Eigen::MatrixXd> A) {
                  int count = 0;
                  for (int i = 0; i < A.rows(); i++) {
                  for (int ii = 0; ii < A.cols(); ii++) {
@@ -742,14 +751,14 @@ namespace drake {
                 
                 
                 // FIRST PROXIMAL UPDATE
-                Eigen::VectorXd AdmmSolverWeighted::proximalUpdateObjective(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::MatrixXd> R, double rho1) {
+                Eigen::VectorXd AccelWeightedAdmmSolver::proximalUpdateObjective(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::MatrixXd> R, double rho1) {
                     Eigen::MatrixXd temp = 2 * R + rho1 * Eigen::MatrixXd::Identity(N * (num_states + num_inputs), N * (num_states + num_inputs));
                     return temp.llt().solve(rho1 * nu);
                 }
                 
                 
                 // SECOND PROXIMAL UPDATE
-                Eigen::VectorXd AdmmSolverWeighted::proximalUpdateConstraints(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::SparseMatrix<double> > M, Eigen::Ref<Eigen::VectorXd> c, Eigen::Ref<Eigen::SparseMatrix<double> > G, Eigen::Ref<Eigen::VectorXd> h, double rho1, double rho2, double rho3) {
+                Eigen::VectorXd AccelWeightedAdmmSolver::proximalUpdateConstraints(Eigen::Ref<Eigen::VectorXd> nu, Eigen::Ref<Eigen::SparseMatrix<double> > M, Eigen::Ref<Eigen::VectorXd> c, Eigen::Ref<Eigen::SparseMatrix<double> > G, Eigen::Ref<Eigen::VectorXd> h, double rho1, double rho2, double rho3) {
                     Eigen::MatrixXd Mt = M.transpose();
                     Eigen::MatrixXd Gt = G.transpose();
                     
@@ -758,17 +767,17 @@ namespace drake {
                     return temp.llt().solve(2 * rho2 * Mt * c + 2 * rho3 * Gt * h + rho1 * nu);
                 }
                 
-                double AdmmSolverWeighted::getStateFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
+                double AccelWeightedAdmmSolver::getStateFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
                     return (y[time_index * num_states + index]);
                 }
                 
-                double AdmmSolverWeighted::getInputFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
+                double AccelWeightedAdmmSolver::getInputFromY(Eigen::Ref<Eigen::VectorXd> y, int time_index, int index) {
                     return (y[N * num_states + time_index * num_inputs + index]);
                 }
                 
                 
                 // DOUBLE INTEGRATOR DYNAMICS
-                void AdmmSolverWeighted::integratorDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> state, Eigen::Ref<Eigen::VectorXd> input, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
+                void AccelWeightedAdmmSolver::integratorDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> state, Eigen::Ref<Eigen::VectorXd> input, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
                     f[0] = state[1];
                     f[1] = input[0];
                     
@@ -780,7 +789,7 @@ namespace drake {
                 
                 /*
                  // QUAD DYNAMICS
-                 void AdmmSolverWeighted::quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
+                 void AccelWeightedAdmmSolver::quadDynamics(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> f, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii) {
                  
                  double quad_L = 0.25; // length of rotor arm
                  double quad_mass = 0.486; // mass of quadrotor
@@ -808,7 +817,7 @@ namespace drake {
                 
                 /*
                  // ALL CONSTRAINTS? (FOR TESTING)
-                 void AdmmSolverWeighted::allConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
+                 void AccelWeightedAdmmSolver::allConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
                  
                  int num_states = 6; int num_inputs = 2;
                  int N = (x.size() / num_states);
@@ -836,31 +845,31 @@ namespace drake {
                  */
                 
                 // STATE INPUT CONSTRAINTS
-                void AdmmSolverWeighted::stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                void AccelWeightedAdmmSolver::stateUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                     g = x - x_upper_bound;
                     dg_x = Eigen::MatrixXd::Identity(num_states, num_states);
                     dg_u = Eigen::MatrixXd::Zero(num_states, num_inputs);
                 }
                 
-                void AdmmSolverWeighted::stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                void AccelWeightedAdmmSolver::stateLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                     g = x_lower_bound - x;
                     dg_x = -1 * Eigen::MatrixXd::Identity(num_states, num_states);
                     dg_u = Eigen::MatrixXd::Zero(num_states, num_inputs);
                 }
                 
-                void AdmmSolverWeighted::inputUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                void AccelWeightedAdmmSolver::inputUpperBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                     g = u - u_upper_bound;
                     dg_x = Eigen::MatrixXd::Zero(num_inputs, num_states);
                     dg_u = Eigen::MatrixXd::Identity(num_inputs, num_inputs);
                 }
                 
-                void AdmmSolverWeighted::inputLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                void AccelWeightedAdmmSolver::inputLowerBoundConstraint(double t, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                     g = u_lower_bound - u;
                     dg_x = Eigen::MatrixXd::Zero(num_inputs, num_states);
                     dg_u = -1 * Eigen::MatrixXd::Identity(num_inputs, num_inputs);
                 }
                 /*
-                 void AdmmSolverWeighted::stateInputConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> x_upper_bound, Eigen::Ref<Eigen::VectorXd> x_lower_bound, Eigen::Ref<Eigen::VectorXd> u_upper_bound, Eigen::Ref<Eigen::VectorXd> u_lower_bound, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
+                 void AccelWeightedAdmmSolver::stateInputConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> x_upper_bound, Eigen::Ref<Eigen::VectorXd> x_lower_bound, Eigen::Ref<Eigen::VectorXd> u_upper_bound, Eigen::Ref<Eigen::VectorXd> u_lower_bound, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
                  
                  int nn = num_states + num_inputs;
                  
@@ -877,7 +886,7 @@ namespace drake {
                 
                 /*
                  // OBSTACLE CONSTRAINTS
-                 void AdmmSolverWeighted::obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, obstacle* obs, int num_constraints, int N, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
+                 void AccelWeightedAdmmSolver::obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, obstacle* obs, int num_constraints, int N, int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg) {
                  
                  double quad_L = 0.25;
                  
@@ -914,7 +923,7 @@ namespace drake {
                 
                 
                 // PLACE A MATRIX INTO M
-                void AdmmSolverWeighted::placeAinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Aii, int ii) {
+                void AccelWeightedAdmmSolver::placeAinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Aii, int ii) {
                     // place values of A in M
                     for (int row = 0; row < num_states; row++) {
                         for (int col = 0; col < num_states; col++) {
@@ -931,7 +940,7 @@ namespace drake {
                 
                 
                 // PLACE B MATRIX INTO M
-                void AdmmSolverWeighted::placeBinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Bii, int ii) {
+                void AccelWeightedAdmmSolver::placeBinM(std::vector<Triplet<double> >* tripletsMptr, Eigen::Ref<Eigen::MatrixXd> Bii, int ii) {
                     // should copy entries of Bii into right place in M
                     for (int row = 0; row < num_states; row++) {
                         for (int col = 0; col < num_inputs; col++) {
@@ -943,7 +952,7 @@ namespace drake {
                 
                 
                 // CONSTRUCT C VECTOR
-                void AdmmSolverWeighted::makeCVector(Eigen::Ref<Eigen::VectorXd> c, int ii, Eigen::Ref<Eigen::VectorXd> mid_state, Eigen::Ref<Eigen::VectorXd> mid_input, Eigen::Ref<Eigen::VectorXd> fii, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii, Eigen::Ref<Eigen::VectorXd> y) {
+                void AccelWeightedAdmmSolver::makeCVector(Eigen::Ref<Eigen::VectorXd> c, int ii, Eigen::Ref<Eigen::VectorXd> mid_state, Eigen::Ref<Eigen::VectorXd> mid_input, Eigen::Ref<Eigen::VectorXd> fii, Eigen::Ref<Eigen::MatrixXd> Aii, Eigen::Ref<Eigen::MatrixXd> Bii, Eigen::Ref<Eigen::VectorXd> y) {
                     
                     Eigen::VectorXd curr_x = y.segment(ii * num_states, num_states);
                     Eigen::VectorXd curr_u = y.segment(N * num_states + ii * num_inputs, num_inputs);
@@ -956,7 +965,7 @@ namespace drake {
                 
                 // PLACE IN G
                 /*
-                 void AdmmSolverWeighted::placeinG(int ii, std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> point_dg_x, Eigen::Ref<Eigen::MatrixXd> point_dg_u) {
+                 void AccelWeightedAdmmSolver::placeinG(int ii, std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> point_dg_x, Eigen::Ref<Eigen::MatrixXd> point_dg_u) {
                  
                  // place values of point dg's into G
                  for (int row = 0; row < num_constraints; row++) {
@@ -969,7 +978,7 @@ namespace drake {
                  }
                  } */
                 
-                void AdmmSolverWeighted::placeinG(std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> single_dg_x, Eigen::Ref<Eigen::MatrixXd> single_dg_u, int ii, int running_constraint_counter, int cf_length) {
+                void AccelWeightedAdmmSolver::placeinG(std::vector<Triplet<double> >* tripletsGptr, Eigen::Ref<Eigen::MatrixXd> single_dg_x, Eigen::Ref<Eigen::MatrixXd> single_dg_u, int ii, int running_constraint_counter, int cf_length) {
                     
                     for (int row = 0; row < cf_length; row++) {
                         for (int col = 0; col < num_states; col++) {
@@ -995,7 +1004,7 @@ namespace drake {
                     //gflags::ParseCommandLineFlags(&argc, &argv, true);
                     return 0;
                 }
-            } // namespace admm_solver_weighted
+            } // namespace accel_weighted_admm_solver
         } // namespace trajectory_optimization
     } // namespace systems
 } // namespace drake
