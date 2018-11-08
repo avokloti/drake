@@ -31,7 +31,7 @@ namespace drake {
                 
                 rho1_decrease_rate = 1.02; // decrease by a constant factor if constraints are satisfied
                 rho2_increase_rate = 1.02; // increases by a constant factor with every iteration
-                rho3_increase_rate = 1.02; // increases by a constant factor with every iteration
+                rho3_increase_rate = 1.05; // increases by a constant factor with every iteration
                 rho_max = 1e9; // maximum value for rho2 and rho3
                 rho1_min = 100;
                 
@@ -295,6 +295,9 @@ namespace drake {
                 Eigen::VectorXd g = Eigen::VectorXd::Zero(num_constraints * N);
                 Eigen::VectorXd h = Eigen::VectorXd::Zero(num_constraints * N);
                 
+                // vector of weights
+                Eigen::VectorXd weights = Eigen::VectorXd::Ones(num_constraints * N);
+                
                 // allocate memory for midpoint values
                 Eigen::VectorXd mid_state(num_states);
                 Eigen::VectorXd mid_input(num_inputs);
@@ -483,6 +486,13 @@ namespace drake {
                             
                             // evaluate constraints
                             cf.function(ii, state, input, single_g, single_dg_x, single_dg_u);
+                            /*
+                            Eigen::VectorXd current_weights = weights.segment(ii * num_constraints + running_constraint_counter, cf.length);
+                            
+                            // new weight update?
+                            single_g = single_g.cwiseProduct(current_weights);
+                            single_dg_x = current_weights.asDiagonal() * single_dg_x;
+                            single_dg_u = current_weights.asDiagonal() * single_dg_u; */
                             
                             if (cf.flag == INEQUALITY) {
                                 for (int iiii = 0; iiii < cf.length; iiii++) {
@@ -496,6 +506,15 @@ namespace drake {
                                     }
                                 }
                             }
+                            /*
+                            for (int iv = 0; iv < cf.length; iv++) {
+                                // index of constraint
+                                int index = ii * num_constraints + running_constraint_counter + iv;
+                                // if constraint is violated, increase weight
+                                if (((cf.flag == INEQUALITY) & (single_g[iv] > 0)) || ((cf.flag == EQUALITY) & (single_g[iv] != 0))) {
+                                    weights[index] = min(weights[index] * rho3_increase_rate, 1e9/rho3);
+                                }
+                            } */
                             
                             g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
                             placeinG(&tripletsG, single_dg_x, single_dg_u, ii, running_constraint_counter, cf.length);
@@ -531,6 +550,18 @@ namespace drake {
                             // evaluate constraints
                             cf.function(ii, state1, input1, state2, input2, single_g, single_dg_x1, single_dg_u1, single_dg_x2, single_dg_u2);
                             
+                            /*
+                            Eigen::VectorXd current_weights = weights.segment(ii * num_constraints + running_constraint_counter, cf.length);
+                            //cout << "current_weights: " << current_weights.transpose().format(CleanFmt) << endl;
+                            //cout << "single g before multiply: " << single_g.transpose().format(CleanFmt) << endl;
+                            
+                            // new weight update?
+                            single_g = single_g.cwiseProduct(current_weights);
+                            single_dg_x1 = current_weights.asDiagonal() * single_dg_x1;
+                            single_dg_u1 = current_weights.asDiagonal() * single_dg_u1;
+                            single_dg_x2 = current_weights.asDiagonal() * single_dg_x2;
+                            single_dg_u2 = current_weights.asDiagonal() * single_dg_u2; */
+                            
                             if (cf.flag == INEQUALITY) {
                                 for (int iiii = 0; iiii < cf.length; iiii++) {
                                     if (single_g[iiii] <= 0) {
@@ -542,6 +573,15 @@ namespace drake {
                                     }
                                 }
                             }
+                            /*
+                            for (int iv = 0; iv < cf.length; iv++) {
+                                // index of constraint
+                                int index = ii * num_constraints + running_constraint_counter + iv;
+                                // if constraint is violated, increase weight
+                                if (((cf.flag == INEQUALITY) & (single_g[iv] > 0)) || ((cf.flag == EQUALITY) & (single_g[iv] != 0))) {
+                                    weights[index] = min(weights[index] * rho3_increase_rate, 1e9/rho3);
+                                }
+                            } */
                             
                             g.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
                             placeinG(&tripletsG, single_dg_x1, single_dg_u1, ii, running_constraint_counter, cf.length);
@@ -602,6 +642,7 @@ namespace drake {
                     fullObjective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
                     
                     // choose whether to accept or reject
+                    /*
                     if (i > 0) {
                         if ((fullObjective - oldFullObjective)/oldFullObjective > 10) {
                             // REJECT
@@ -618,7 +659,10 @@ namespace drake {
                         } else {
                             momentum_r = max(3.0, momentum_r * 0.9);
                         }
-                    }
+                    } */
+                    
+                    //y_prev = next_y;
+                    //lambda_prev = lambda_hat + next_x - next_y;
                     
                     if (momentum_r > 10000) {
                         return;

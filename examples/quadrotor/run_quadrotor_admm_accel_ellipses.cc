@@ -13,6 +13,7 @@
 #include "drake/systems/trajectory_optimization/admm_solver.h"
 #include "drake/systems/trajectory_optimization/accel_admm_solver.h"
 #include "drake/systems/trajectory_optimization/admm_solver_weighted.h"
+#include "drake/systems/trajectory_optimization/accel_weighted_admm_solver.h"
 #include "drake/systems/primitives/trajectory_source.h"
 #include "drake/systems/trajectory_optimization/midpoint_transcription.h"
 #include "drake/systems/trajectory_optimization/direct_collocation.h"
@@ -45,7 +46,7 @@ namespace drake {
                 Eigen::VectorXd input_upper_bound(4);
                 
                 double T = 5.0;
-                int N = 30;
+                int N = 20;
                 double dt = T/N;
                 
                 int num_states = quadrotor_context_ptr->get_num_total_states();
@@ -88,8 +89,8 @@ namespace drake {
                         obstacle_radii_y << 0.5, 0.7;
                     }
                     
-                    state_upper_bound << 100, 100, 100, 100, 0.2, 100, 100, 100, 100, 100, 100, 100;
-                    state_lower_bound << -100, -100, -100, -100, -0.2, -100, -100, -100, -100, -100, -100, -100;
+                    state_upper_bound << 200, 200, 200, 200, 0.2, 200, 200, 200, 200, 200, 200, 200;
+                    state_lower_bound << -200, -200, -200, -200, -0.2, -200, -200, -200, -200, -200, -200, -200;
                     input_lower_bound << 0, 0, 0, 0;
                     input_upper_bound << 10, 10, 10, 10;
                     
@@ -382,6 +383,87 @@ namespace drake {
                      output_admm.close(); */
                 }
                 
+                void solveSwingUpWeightedADMM(int trial, int max_iter) {
+                    
+                    cout << "num states: " << num_states << endl;
+                    cout << "num inputs: " << num_inputs << endl;
+                    cout << "num obstacles: " << num_obstacles << endl;
+                    
+                    // initialize solver
+                    systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 100);
+                    //systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 1000);
+                    
+                    // initialize to a line between x0 and xf
+                    Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                    
+                    if (LINEAR_WARM_START) {
+                        for (int i = 0; i < N; i++) {
+                            for (int ii = 0; ii < num_states; ii++) {
+                                y[i * num_states + ii] = (1 - double(i)/(N-1)) * x0[ii] + double(i)/(N-1) * xf[ii];
+                            }
+                        }
+                    }
+                    
+                    // set tolerances
+                    solver.setRho1(500);
+                    solver.setFeasibilityTolerance(1e-6);
+                    
+                    // use version with only center as a constraint
+                    //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
+                    solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, num_obstacles * 10, "interpolated obstacle constraints");
+                    
+                    // add pitch constraint for consistency
+                    solver.setStateUpperBound(state_upper_bound);
+                    solver.setStateLowerBound(state_lower_bound);
+                    solver.setInputLowerBound(input_lower_bound);
+                    //solver.setInputUpperBound(input_upper_bound);
+                    
+                    // start timer
+                    std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
+                    
+                    // solve
+                    solver.solve(y);
+                    
+                    // end timer
+                    std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
+                    std::chrono::duration<double> elapsed_time = (end_time - start_time);
+                    
+                    cout << "Finished! Runtime = " << elapsed_time.count() << " sec. \n";
+                    
+                    trajectories::PiecewisePolynomial<double> xtraj_weighted_admm = solver.reconstructStateTrajectory();
+                    trajectories::PiecewisePolynomial<double> utraj_weighted_admm = solver.reconstructInputTrajectory();
+                    
+                    //writeTrajToFileTol(output_folder + "quadrotor_obstacles_admm_x", trial, xtraj_admm, num_states, elapsed_time.count(), max_iter);
+                    //writeTrajToFileTol(output_folder + "quadrotor_obstacles_admm_u", trial, utraj_admm, num_inputs, elapsed_time.count(), max_iter);
+                    
+                    //calculateIntegrationError(output_folder + "quadrotor_obstacles_admm_x", trial, xtraj_admm, utraj_admm);
+                    
+                    // write output to files
+                    writeStateToFile("weighted_admm_x", trial, xtraj_weighted_admm);
+                    writeInputToFile("weighted_admm_u", trial, utraj_weighted_admm);
+                    writeHeaderFile("weighted_admm_header", trial, xtraj_weighted_admm, utraj_weighted_admm, elapsed_time.count(), max_iter);
+                    
+                    /*
+                     Eigen::MatrixXd xtraj_admm_original = solver.getSolutionStateTrajectory();
+                     Eigen::MatrixXd utraj_admm_original = solver.getSolutionInputTrajectory();
+                     
+                     // write obstacles to file
+                     ofstream output_admm;
+                     output_admm.open(output_folder + "quadrotor_obstacles_admm_x_original.txt");
+                     if (!output_admm.is_open()) {
+                     cerr << "Problem opening admm original output file.\n";
+                     }
+                     output_admm << xtraj_admm_original << endl;
+                     output_admm.close();
+                     
+                     output_admm.open(output_folder + "quadrotor_obstacles_admm_u_original.txt");
+                     if (!output_admm.is_open()) {
+                     cerr << "Problem opening admm original output file.\n";
+                     }
+                     output_admm << utraj_admm_original << endl;
+                     output_admm.close(); */
+                }
+                
                 void solveSwingUpAccelADMM(int trial, int max_iter) {
                     
                     cout << "num states: " << num_states << endl;
@@ -389,8 +471,89 @@ namespace drake {
                     cout << "num obstacles: " << num_obstacles << endl;
                     
                     // initialize solver
-                    systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
-                    //systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 1000);
+                    //systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
+                    systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 100);
+                    
+                    // initialize to a line between x0 and xf
+                    Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                    
+                    if (LINEAR_WARM_START) {
+                        for (int i = 0; i < N; i++) {
+                            for (int ii = 0; ii < num_states; ii++) {
+                                y[i * num_states + ii] = (1 - double(i)/(N-1)) * x0[ii] + double(i)/(N-1) * xf[ii];
+                            }
+                        }
+                    }
+                    
+                    // set tolerances
+                    solver.setRho1(500);
+                    solver.setFeasibilityTolerance(1e-6);
+                    
+                    // use version with only center as a constraint
+                    //solver.addInequalityConstraintToAllKnotPoints(obstacleConstraints, obstacle_radii.size(), "obstacle constraints");
+                    solver.addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, num_obstacles * 10, "interpolated obstacle constraints");
+                    
+                    // add pitch constraint for consistency
+                    solver.setStateUpperBound(state_upper_bound);
+                    solver.setStateLowerBound(state_lower_bound);
+                    solver.setInputLowerBound(input_lower_bound);
+                    //solver.setInputUpperBound(input_upper_bound);
+                    
+                    // start timer
+                    std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
+                    
+                    // solve
+                    solver.solve(y);
+                    
+                    // end timer
+                    std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
+                    std::chrono::duration<double> elapsed_time = (end_time - start_time);
+                    
+                    cout << "Finished! Runtime = " << elapsed_time.count() << " sec. \n";
+                    
+                    trajectories::PiecewisePolynomial<double> xtraj_accel_admm = solver.reconstructStateTrajectory();
+                    trajectories::PiecewisePolynomial<double> utraj_accel_admm = solver.reconstructInputTrajectory();
+                    
+                    //writeTrajToFileTol(output_folder + "quadrotor_obstacles_admm_x", trial, xtraj_admm, num_states, elapsed_time.count(), max_iter);
+                    //writeTrajToFileTol(output_folder + "quadrotor_obstacles_admm_u", trial, utraj_admm, num_inputs, elapsed_time.count(), max_iter);
+                    
+                    //calculateIntegrationError(output_folder + "quadrotor_obstacles_admm_x", trial, xtraj_admm, utraj_admm);
+                    
+                    // write output to files
+                    writeStateToFile("accel_admm_x", trial, xtraj_accel_admm);
+                    writeInputToFile("accel_admm_u", trial, utraj_accel_admm);
+                    writeHeaderFile("accel_admm_header", trial, xtraj_accel_admm, utraj_accel_admm, elapsed_time.count(), max_iter);
+                    
+                    /*
+                     Eigen::MatrixXd xtraj_admm_original = solver.getSolutionStateTrajectory();
+                     Eigen::MatrixXd utraj_admm_original = solver.getSolutionInputTrajectory();
+                     
+                     // write obstacles to file
+                     ofstream output_admm;
+                     output_admm.open(output_folder + "quadrotor_obstacles_admm_x_original.txt");
+                     if (!output_admm.is_open()) {
+                     cerr << "Problem opening admm original output file.\n";
+                     }
+                     output_admm << xtraj_admm_original << endl;
+                     output_admm.close();
+                     
+                     output_admm.open(output_folder + "quadrotor_obstacles_admm_u_original.txt");
+                     if (!output_admm.is_open()) {
+                     cerr << "Problem opening admm original output file.\n";
+                     }
+                     output_admm << utraj_admm_original << endl;
+                     output_admm.close(); */
+                }
+                
+                void solveSwingUpAccelWeightedADMM(int trial, int max_iter) {
+                    
+                    cout << "num states: " << num_states << endl;
+                    cout << "num inputs: " << num_inputs << endl;
+                    cout << "num obstacles: " << num_obstacles << endl;
+                    
+                    // initialize solver
+                    //systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
+                    systems::trajectory_optimization::accel_weighted_admm_solver::AccelWeightedAdmmSolver solver = systems::trajectory_optimization::accel_weighted_admm_solver::AccelWeightedAdmmSolver(quadrotor, x0, xf, T, N, 100);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -632,7 +795,9 @@ namespace drake {
                     std::vector<solvers::SolutionResult> snopt_results(1);
                     
                     solveSwingUpADMM(0, max_iter);
+                    solveSwingUpWeightedADMM(0, max_iter);
                     solveSwingUpAccelADMM(0, max_iter);
+                    solveSwingUpAccelWeightedADMM(0, max_iter);
                     //snopt_results[0] = solveSwingUpSNOPT(0, max_iter);
                     //ipopt_results[0] = solveSwingUpIPOPT(0, max_iter);
                     
