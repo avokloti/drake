@@ -325,9 +325,11 @@ namespace drake {
                 double rho2 = initial_rho2;
                 double rho3 = initial_rho3;
                 
+                IOFormat CleanFmt(6, 0, ", ", "\n");
+                
                 // open output file for writing y
                 if (DEBUG) {
-                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/accel/single_run_admm_y.txt");
+                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/forest/single_run_admm_y.txt");
                     if (!output_file.is_open()) {
                         std::cerr << "Problem opening output file.";
                         return;
@@ -561,6 +563,14 @@ namespace drake {
                     //std::cout << "\nG rows and cols:\n" << G.rows() << " " << G.cols() << "\n";
                     //std::cout << "\nG block:\n" << G.block(num_constraints, num_states, num_constraints, 2 * num_states) << "\n";
                     //std::cout << "g:\n" << g << "\n";
+                    output_G.open("/Users/ira/Documents/drake/examples/quadrotor/output/forest/g_unweighted.txt", std::ios_base::app);
+                    if (!output_G.is_open()) {
+                        std::cerr << "Problem opening weights output file." << endl;
+                    } else {
+                        //cout << "size of g is:" << g.rows() << "  " << g.cols() << endl;
+                        output_G << g.transpose().format(CleanFmt) << endl;
+                    }
+                    output_G.close();
                     
                     h = G * y - g;
                     
@@ -603,7 +613,7 @@ namespace drake {
                     }
                     
                     // print / compute info
-                    if (i % 20 == 0) {
+                    if (i % 1 == 0) {
                         cout << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << full_objective << "\n";
                     }
                     

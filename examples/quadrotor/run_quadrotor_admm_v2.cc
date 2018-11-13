@@ -421,7 +421,7 @@ namespace drake {
                     std::vector<solvers::SolutionResult> snopt_results(num_trials);
                     
                     // initialize some number of trees
-                    num_obstacles = 4;
+                    num_obstacles = 6;
                     obstacle_center_x = Eigen::VectorXd::Zero(num_obstacles);
                     obstacle_center_y = Eigen::VectorXd::Zero(num_obstacles);
                     obstacle_radii = Eigen::VectorXd::Zero(num_obstacles);
