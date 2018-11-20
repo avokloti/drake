@@ -329,7 +329,7 @@ namespace drake {
                 
                 // open output file for writing y
                 if (DEBUG) {
-                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/forest/single_run_admm_y.txt");
+                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/accel/single_run_admm_y.txt");
                     if (!output_file.is_open()) {
                         std::cerr << "Problem opening output file.";
                         return;
@@ -484,7 +484,7 @@ namespace drake {
                                         single_dg_x.block(iiii, 0, 1, num_states) = 0 * single_dg_x.block(iiii, 0, 1, num_states);
                                         single_dg_u.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u.block(iiii, 0, 1, num_inputs);
                                     } else {
-                                        //std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ".\n";
+                                        std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ": " << single_g[iiii] << ".\n";
                                         //std::cout << "State: " << state << endl;
                                     }
                                 }
@@ -532,6 +532,8 @@ namespace drake {
                                         single_dg_u1.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u1.block(iiii, 0, 1, num_inputs);
                                         single_dg_x2.block(iiii, 0, 1, num_states) = 0 * single_dg_x2.block(iiii, 0, 1, num_states);
                                         single_dg_u2.block(iiii, 0, 1, num_inputs) = 0 * single_dg_u2.block(iiii, 0, 1, num_inputs);
+                                    } else {
+                                        std::cout << "Point " << ii << " violates subconstraint " << iiii << " of " << cf.constraint_name << ": " << single_g[iiii] << ".\n";
                                     }
                                 }
                             }
@@ -600,6 +602,7 @@ namespace drake {
                     feasibilityVector = M * y - c;
                     feasibilityNorm = feasibilityVector.lpNorm<Eigen::Infinity>();
                     constraintVector = g; //previous: constraintVector = G * y - h;
+                    //constraintVector = G * y - h;
                     constraintNorm = constraintVector.lpNorm<Eigen::Infinity>();
                     full_objective = objective + rho2 * pow(feasibilityVector.lpNorm<2>(), 2) + rho3 * pow(constraintVector.lpNorm<2>(), 2);
                     

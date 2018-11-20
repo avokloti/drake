@@ -188,7 +188,7 @@ drake_cc_binary(
 drake_cc_binary(
     name = "run_quadrotor_admm_forest",
     srcs = ["run_quadrotor_admm_forest.cc"],
-    copts = ["-Wno-error=unused-function"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
     deps = [
         ":quadrotor_plant",
 	"//math:wrap_to",

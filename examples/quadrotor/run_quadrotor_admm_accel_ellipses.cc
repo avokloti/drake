@@ -390,7 +390,7 @@ namespace drake {
                     cout << "num obstacles: " << num_obstacles << endl;
                     
                     // initialize solver
-                    systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 100);
+                    systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
                     //systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 1000);
                     
                     // initialize to a line between x0 and xf
@@ -472,7 +472,7 @@ namespace drake {
                     
                     // initialize solver
                     //systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
-                    systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 100);
+                    systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver solver = systems::trajectory_optimization::accel_admm_solver::AccelAdmmSolver(quadrotor, x0, xf, T, N, 120);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -553,7 +553,7 @@ namespace drake {
                     
                     // initialize solver
                     //systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted solver = systems::trajectory_optimization::admm_solver_weighted::AdmmSolverWeighted(quadrotor, x0, xf, T, N, 1000);
-                    systems::trajectory_optimization::accel_weighted_admm_solver::AccelWeightedAdmmSolver solver = systems::trajectory_optimization::accel_weighted_admm_solver::AccelWeightedAdmmSolver(quadrotor, x0, xf, T, N, 100);
+                    systems::trajectory_optimization::accel_weighted_admm_solver::AccelWeightedAdmmSolver solver = systems::trajectory_optimization::accel_weighted_admm_solver::AccelWeightedAdmmSolver(quadrotor, x0, xf, T, N, 120);
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -794,8 +794,8 @@ namespace drake {
                     std::vector<solvers::SolutionResult> ipopt_results(1);
                     std::vector<solvers::SolutionResult> snopt_results(1);
                     
-                    solveSwingUpADMM(0, max_iter);
-                    solveSwingUpWeightedADMM(0, max_iter);
+                    //solveSwingUpADMM(0, max_iter);
+                    //solveSwingUpWeightedADMM(0, max_iter);
                     solveSwingUpAccelADMM(0, max_iter);
                     solveSwingUpAccelWeightedADMM(0, max_iter);
                     //snopt_results[0] = solveSwingUpSNOPT(0, max_iter);

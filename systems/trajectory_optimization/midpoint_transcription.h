@@ -57,7 +57,11 @@ namespace drake {
                 trajectories::PiecewisePolynomial<double> ReconstructStateTrajectory()
                 const override;
                 
-                void AddInterpolatedObstacleConstraintToAllPoints(Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii, int num_alpha);
+                Eigen::MatrixXd getStateTrajectoryMatrix(int num_states) const;
+                
+                Eigen::MatrixXd getInputTrajectoryMatrix(int num_inputs) const;
+                
+                void AddInterpolatedObstacleConstraintToAllPoints(Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii_x, Eigen::Ref<Eigen::VectorXd> obstacle_radii_y, int num_alpha);
                 
             private:
                 // Implements a running cost at all timesteps using trapezoidal integration.
@@ -159,7 +163,7 @@ namespace drake {
                 DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(InterpolatedObstacleConstraint)
                 
             public:
-                InterpolatedObstacleConstraint(int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii, int num_alpha);
+                InterpolatedObstacleConstraint(int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii_x, Eigen::Ref<Eigen::VectorXd> obstacle_radii_y, int num_alpha);
                 
                 ~InterpolatedObstacleConstraint() override = default;
                 int num_states() const { return num_states_; }
@@ -189,7 +193,8 @@ namespace drake {
                 int num_inputs_;
                 Eigen::VectorXd obstacle_center_x_;
                 Eigen::VectorXd obstacle_center_y_;
-                Eigen::VectorXd obstacle_radii_;
+                Eigen::VectorXd obstacle_radii_x_;
+                Eigen::VectorXd obstacle_radii_y_;
                 int num_alpha_;
             };
             
