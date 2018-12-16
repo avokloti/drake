@@ -43,6 +43,31 @@ drake_cc_binary(
 )
 
 drake_cc_binary(
+    name = "run_kuka_arm_tests",
+    srcs = ["run_kuka_arm_tests.cc"],
+    data = [
+        "//examples/kuka_iiwa_arm:models",
+        "//manipulation/models/iiwa_description:models",
+    ],
+    deps = [
+        ":controlled_kuka_trajectory",
+        "//common:find_resource",
+        "//examples/kuka_iiwa_arm:iiwa_common",
+        "//geometry:geometry_visualization",
+        "//geometry:scene_graph",
+        "//lcm",
+        "//multibody/multibody_tree/multibody_plant",
+        "//multibody/multibody_tree/parsing:multibody_plant_sdf_parser",
+        "//systems/analysis:simulator",
+        "//systems/controllers:inverse_dynamics_controller",
+        "//systems/primitives:trajectory_source",
+	"//systems/trajectory_optimization:midpoint_transcription",
+        "@gflags",
+    ],
+)
+
+
+drake_cc_binary(
     name = "controlled_kuka_multibody_demo",
     srcs = ["controlled_kuka_multibody_demo.cc"],
     add_test_rule = 1,
