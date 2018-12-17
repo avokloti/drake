@@ -56,6 +56,7 @@ drake_cc_binary(
         "//geometry:geometry_visualization",
         "//geometry:scene_graph",
         "//lcm",
+        "//manipulation/util:sim_diagram_builder",
         "//multibody/multibody_tree/multibody_plant",
         "//multibody/multibody_tree/parsing:multibody_plant_sdf_parser",
         "//systems/analysis:simulator",
