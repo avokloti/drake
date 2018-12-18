@@ -207,8 +207,8 @@ namespace drake {
                 }
                 
                 /* Solve with IPOPT */
-                solvers::SolutionResult solveIPOPT(drake::systems::RigidBodyPlant<double>* plant, int num_states, int num_inputs) {
-                    systems::trajectory_optimization::MidpointTranscription traj_opt(plant, *plant->CreateDefaultContext(), N, T/N, T/N);
+                solvers::SolutionResult solveIPOPT(drake::systems::RigidBodyPlant<double>* plant) {
+                    systems::trajectory_optimization::MidpointTranscription traj_opt(plant, *plant->CreateDefaultContext(), N, dt, dt);
                     
                     // get state and input placeholders
                     auto u = traj_opt.input();
@@ -236,6 +236,13 @@ namespace drake {
                     // add constraints to problem
                     traj_opt.AddRunningCost((x - xf).dot(Qf * (x - xf)) + u.dot(R * u));
                     traj_opt.AddFinalCost((x - xf).dot(Q * (x - xf)));
+                    
+                    // ipopt settings?
+                    traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-4);
+                    traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", 1e-4);
+                    traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-4);
+                    traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", 1e-4);
+                    traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "print_level", 5);
                     
                     // solve and time solution
                     solvers::IpoptSolver solver;
@@ -254,14 +261,14 @@ namespace drake {
                     // write output to files
                     writeStateToFile("ipopt_x", 0, xtraj_ipopt);
                     writeInputToFile("ipopt_u", 0, utraj_ipopt);
-                    writeHeaderFile("ipopt_header", 0, xtraj_ipopt, utraj_ipopt, elapsed_time.count(), max_iter);
+                    writeHeaderFile("ipopt_header", 0, xtraj_ipopt, utraj_ipopt, elapsed_time.count(), -1);
                     
                     return result;
                 }
                 
                 /* Solve with IPOPT */
-                solvers::SolutionResult solveSNOPT(drake::systems::RigidBodyPlant<double>* plant, int num_states, int num_inputs) {
-                    systems::trajectory_optimization::MidpointTranscription traj_opt(plant, *plant->CreateDefaultContext(), N, T/N, T/N);
+                solvers::SolutionResult solveSNOPT(drake::systems::RigidBodyPlant<double>* plant) {
+                    systems::trajectory_optimization::MidpointTranscription traj_opt(plant, *plant->CreateDefaultContext(), N, dt, dt);
                     
                     // get state and input placeholders
                     auto u = traj_opt.input();
@@ -290,6 +297,11 @@ namespace drake {
                     traj_opt.AddRunningCost((x - xf).dot(Qf * (x - xf)) + u.dot(R * u));
                     traj_opt.AddFinalCost((x - xf).dot(Q * (x - xf)));
                     
+                    // set SNOPT options
+                    traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-4);
+                    traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-4);
+                    traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
+                    
                     // solve and time solution
                     solvers::SnoptSolver solver;
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -307,7 +319,7 @@ namespace drake {
                     // write output to files
                     writeStateToFile("snopt_x", 0, xtraj_snopt);
                     writeInputToFile("snopt_u", 0, utraj_snopt);
-                    writeHeaderFile("snopt_header", 0, xtraj_snopt, utraj_snopt, elapsed_time.count(), max_iter);
+                    writeHeaderFile("snopt_header", 0, xtraj_snopt, utraj_snopt, elapsed_time.count(), 100000);
                     
                     return result;
                 }
@@ -334,13 +346,14 @@ namespace drake {
                     std::cout << "num positions: " << plant->get_num_positions() << std::endl;
                     std::cout << "num actuators: " << plant->get_num_actuators() << std::endl;
                     
-                    solveIPOPT(plant, num_states, num_inputs);
+                    solveIPOPT(plant);
+                    solveSNOPT(plant);
                     
+                    /*
                     std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
-                    
                     systems::Simulator<double> simulator(*diagram);
                     simulator.Initialize();
-                    simulator.set_target_realtime_rate(1.0);
+                    simulator.set_target_realtime_rate(1.0); */
                     
                     return 0;
                 }
