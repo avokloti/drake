@@ -65,6 +65,10 @@ int DoMain() {
       diagram_builder->template AddSystem<systems::TrajectorySource<double>>(
           traj, 1 /* outputs q + v */);
   traj_src->set_name("trajectory_source");
+    
+    std::cout << "traj size: " << traj.rows() << ", " << traj.cols() << std::endl;
+    std::cout << "traj src size: " << traj_src->get_output_port().size() << std::endl;
+    std::cout << "controller size: " << controller->get_input_port_desired_state().size() << std::endl;
 
   diagram_builder->Connect(traj_src->get_output_port(),
                            controller->get_input_port_desired_state());

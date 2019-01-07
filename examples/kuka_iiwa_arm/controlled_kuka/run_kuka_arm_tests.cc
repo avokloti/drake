@@ -65,13 +65,13 @@ namespace drake {
                 double pi = 3.14159;
                 
                 // initial and final states
-                const Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, -0.683, 0, 1.77, 0, 0.88, -1.57, 0, 0, 0, 0, 0, 0, 0).finished();
-                const Eigen::VectorXd xf = (Eigen::VectorXd(12) << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd x0 = (Eigen::VectorXd(14) << 0, -0.683, 0, 1.77, 0, 0.88, -1.57, 0, 0, 0, 0, 0, 0, 0).finished();
+                const Eigen::VectorXd xf = (Eigen::VectorXd(14) << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0).finished();
                 int num_states;
                 int num_inputs;
                 
                 // define time and number of points
-                int N = 10;
+                int N = 20;
                 double T = 10.0;
                 double dt = T/N;
                 
@@ -234,8 +234,11 @@ namespace drake {
                     Eigen::MatrixXd R = Eigen::MatrixXd::Identity(num_inputs, num_inputs) * 0.0001;
                     
                     // add constraints to problem
-                    traj_opt.AddRunningCost((x - xf).dot(Qf * (x - xf)) + u.dot(R * u));
+                    //traj_opt.AddRunningCost((x - xf).dot(Qf * (x - xf)) + u.dot(R * u));
+                    traj_opt.AddRunningCost(u.dot(R * u));
                     traj_opt.AddFinalCost((x - xf).dot(Q * (x - xf)));
+                    traj_opt.AddLinearConstraint(traj_opt.initial_state() == x0);
+                    traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     
                     // ipopt settings?
                     traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-4);
@@ -294,8 +297,11 @@ namespace drake {
                     Eigen::MatrixXd R = Eigen::MatrixXd::Identity(num_inputs, num_inputs) * 0.0001;
                     
                     // add constraints to problem
-                    traj_opt.AddRunningCost((x - xf).dot(Qf * (x - xf)) + u.dot(R * u));
+                    //traj_opt.AddRunningCost((x - xf).dot(Qf * (x - xf)) + u.dot(R * u));
+                    traj_opt.AddRunningCost(u.dot(R * u));
                     traj_opt.AddFinalCost((x - xf).dot(Q * (x - xf)));
+                    traj_opt.AddLinearConstraint(traj_opt.initial_state() == x0);
+                    traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     
                     // set SNOPT options
                     traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", 1e-4);

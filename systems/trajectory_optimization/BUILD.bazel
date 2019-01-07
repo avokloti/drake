@@ -198,8 +198,6 @@ drake_cc_library(
     ],
 )
 
-<<<<<<< HEAD
-
 drake_cc_library(
     name = "al_admm_solver",
     srcs = [
@@ -220,8 +218,6 @@ drake_cc_library(
     ],
 )
 
-=======
->>>>>>> dfefcf86d7446ccd92f9a98d1df577072652b746
 # === test/ ===
 
 drake_cc_googletest(
