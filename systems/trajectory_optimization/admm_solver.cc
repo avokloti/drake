@@ -329,7 +329,7 @@ namespace drake {
                 
                 // open output file for writing y
                 if (DEBUG) {
-                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/accel/single_run_admm_y.txt");
+                    output_file.open("/Users/ira/Documents/drake/examples/quadrotor/output/forest/single_run_admm_y.txt");
                     if (!output_file.is_open()) {
                         std::cerr << "Problem opening output file.";
                         return;
