@@ -179,12 +179,12 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "accel_weighted_admm_solver",
+    name = "admm_solver_base",
     srcs = [
-        "accel_weighted_admm_solver.cc",
+        "admm_solver_base.cc",
     ],
     hdrs = [
-        "accel_weighted_admm_solver.h",
+        "admm_solver_base.h",
     ],
     deps = [
         "//math:autodiff",
@@ -199,12 +199,12 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "al_admm_solver",
+    name = "admm_solver_weighted_v2",
     srcs = [
-        "al_admm_solver.cc",
+        "admm_solver_weighted_v2.cc",
     ],
     hdrs = [
-        "al_admm_solver.h",
+        "admm_solver_weighted_v2.h",
     ],
     deps = [
         "//math:autodiff",
@@ -215,6 +215,92 @@ drake_cc_library(
         "//common/trajectories:piecewise_polynomial",
         "//systems/primitives:linear_system",
 	"//common:autodiff",
+	":admm_solver_base",
+    ],
+)
+
+drake_cc_library(
+    name = "admm_solver_al",
+    srcs = [
+        "admm_solver_al.cc",
+    ],
+    hdrs = [
+        "admm_solver_al.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+	":admm_solver_base",
+    ],
+)
+
+drake_cc_library(
+    name = "admm_solver_al_ineq",
+    srcs = [
+        "admm_solver_al_ineq.cc",
+    ],
+    hdrs = [
+        "admm_solver_al_ineq.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+	":admm_solver_base",
+    ],
+)
+
+drake_cc_library(
+    name = "ali_solver_res",
+    srcs = [
+        "ali_solver_res.cc",
+    ],
+    hdrs = [
+        "ali_solver_res.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+	":admm_solver_base",
+    ],
+)
+
+
+drake_cc_library(
+    name = "admm_solver_scaled",
+    srcs = [
+        "admm_solver_scaled.cc",
+    ],
+    hdrs = [
+        "admm_solver_scaled.h",
+    ],
+    deps = [
+        "//math:autodiff",
+        "//math:gradient",
+	"//systems/framework:system",
+	"//systems/framework:context",
+	"//systems/primitives:trajectory_source",
+        "//common/trajectories:piecewise_polynomial",
+        "//systems/primitives:linear_system",
+	"//common:autodiff",
+	":admm_solver_base",
     ],
 )
 

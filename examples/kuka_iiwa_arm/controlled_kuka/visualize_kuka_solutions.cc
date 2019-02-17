@@ -24,7 +24,7 @@
 #include "drake/manipulation/util/sim_diagram_builder.h"
 #include "drake/multibody/parsers/urdf_parser.h"
 
-DEFINE_double(simulation_sec, 1, "Number of seconds to simulate.");
+DEFINE_double(simulation_sec, 4, "Number of seconds to simulate.");
 
 using drake::geometry::SceneGraph;
 using drake::lcm::DrakeLcm;
@@ -89,7 +89,9 @@ namespace drake {
                     auto tree = std::make_unique<RigidBodyTree<double>>();
                     CreateTreedFromFixedModelAtPose(FindResourceOrThrow(kUrdfPath), tree.get());
                     
-                    PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("ipopt_x_0");
+                    //PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("admm_al_x_0");
+                    //PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("admm_pen_x_0");
+                    PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("admm_al_ineq_x_0");
                     
                     drake::lcm::DrakeLcm lcm;
                     SimDiagramBuilder<double> builder;
@@ -120,7 +122,7 @@ namespace drake {
                     
                     systems::Simulator<double> simulator(*diagram);
                     simulator.Initialize();
-                    simulator.set_target_realtime_rate(1.0);
+                    simulator.set_target_realtime_rate(0.5);
                     
                     simulator.StepTo(FLAGS_simulation_sec);
                     

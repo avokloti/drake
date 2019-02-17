@@ -1,0 +1,16 @@
+Next lines: N, T, x0, xf, rho1, rho2, rho3, iterations, time, 2-norm feasibility error, inf-norm feasibility error, 2-norm constraint error, inf-norm constraint error, solve_result
+20
+5
+-5.56287	-4.54794	-4.2012	0	0	0	-0.16518	0.0436109	-0.147617	0	0	0	
+5.26743	4.04775	4.45782	0	0	0	0.0203588	0.187817	0.103854	0	0	0	
+0.1
+0.0001
+1
+0
+4.86262
+10.6902
+2.4525
+0
+0
+6.95321e-310
+DIVERGENCE

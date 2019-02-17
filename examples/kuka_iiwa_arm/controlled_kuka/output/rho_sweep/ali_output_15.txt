@@ -1,0 +1,42 @@
+
+---------------------------------
+STARTING SOLVE:
+---------------------------------
+num states (in ADMM): 14
+num inputs (in ADMM): 7
+num constraints per point = 672
+constraints list length = 64
+
+Iteration 0 -- objective cost: 0.00969652 -- feasibility (inf-norm): 1.02911 -- constraint satisfaction (inf-norm): 0-- full objective: 1251.02G norm: 0
+Iteration 5 -- objective cost: 0.980581 -- feasibility (inf-norm): 0.349506 -- constraint satisfaction (inf-norm): 0-- full objective: 470.418G norm: 0
+Iteration 10 -- objective cost: 4.64889 -- feasibility (inf-norm): 0.441658 -- constraint satisfaction (inf-norm): 0-- full objective: 647.631G norm: 0
+Iteration 15 -- objective cost: 6.26172 -- feasibility (inf-norm): 0.768016 -- constraint satisfaction (inf-norm): 0.019227-- full objective: 932.8G norm: 4.86203
+Iteration 20 -- objective cost: 7.36599 -- feasibility (inf-norm): 0.947719 -- constraint satisfaction (inf-norm): 10.7725-- full objective: 937128G norm: 11.9464
+Iteration 25 -- objective cost: 11.9818 -- feasibility (inf-norm): 1.74134 -- constraint satisfaction (inf-norm): 0.974683-- full objective: 49959.1G norm: 18.6308
+Iteration 30 -- objective cost: 23.1219 -- feasibility (inf-norm): 1.52005 -- constraint satisfaction (inf-norm): 18.296-- full objective: 4.75041e+06G norm: 22.5447
+Iteration 35 -- objective cost: 26.9947 -- feasibility (inf-norm): 2.0286 -- constraint satisfaction (inf-norm): 24.7739-- full objective: 1.28647e+07G norm: 23.1511
+Iteration 40 -- objective cost: 37.5582 -- feasibility (inf-norm): 3.73407 -- constraint satisfaction (inf-norm): 19.8377-- full objective: 6.72599e+06G norm: 24.7315
+Iteration 45 -- objective cost: 38.1214 -- feasibility (inf-norm): 1.44402 -- constraint satisfaction (inf-norm): 38.7393-- full objective: 1.65452e+07G norm: 24.5184
+Iteration 50 -- objective cost: 53.0698 -- feasibility (inf-norm): 1.75911 -- constraint satisfaction (inf-norm): 28.4619-- full objective: 1.45992e+07G norm: 29.4023
+Iteration 55 -- objective cost: 54.0073 -- feasibility (inf-norm): 1.23924 -- constraint satisfaction (inf-norm): 16.7949-- full objective: 5.01187e+06G norm: 28.8617
+Iteration 60 -- objective cost: 58.5031 -- feasibility (inf-norm): 1.86262 -- constraint satisfaction (inf-norm): 40.2831-- full objective: 1.73675e+07G norm: 39.0221
+Iteration 65 -- objective cost: 82.6889 -- feasibility (inf-norm): 1.76125 -- constraint satisfaction (inf-norm): 18.6489-- full objective: 9.33362e+06G norm: 37.8166
+Iteration 70 -- objective cost: 270.835 -- feasibility (inf-norm): 9.34601 -- constraint satisfaction (inf-norm): 70.1233-- full objective: 8.68938e+07G norm: 49.3275
+Iteration 75 -- objective cost: 518.331 -- feasibility (inf-norm): 12.1777 -- constraint satisfaction (inf-norm): 203.435-- full objective: 5.43113e+08G norm: 61.0012
+Iteration 80 -- objective cost: 1659.6 -- feasibility (inf-norm): 28.117 -- constraint satisfaction (inf-norm): 348.057-- full objective: 3.77412e+09G norm: 68.0236
+Iteration 85 -- objective cost: 6784.38 -- feasibility (inf-norm): 29.9063 -- constraint satisfaction (inf-norm): 665.902-- full objective: 2.38653e+10G norm: 83.9599
+Iteration 90 -- objective cost: 9081.74 -- feasibility (inf-norm): 55.925 -- constraint satisfaction (inf-norm): 2029.37-- full objective: 1.74211e+11G norm: 102.904
+Iteration 95 -- objective cost: 59469.5 -- feasibility (inf-norm): 384.823 -- constraint satisfaction (inf-norm): 17548.2-- full objective: 4.22551e+12G norm: 115.153
+Iteration 100 -- objective cost: 138915 -- feasibility (inf-norm): 132.193 -- constraint satisfaction (inf-norm): 4796.97-- full objective: 1.187e+12G norm: 141.621
+Iteration 105 -- objective cost: 32725.8 -- feasibility (inf-norm): 238.309 -- constraint satisfaction (inf-norm): 8098.28-- full objective: 2.16307e+12G norm: 154.433
+Iteration 110 -- objective cost: 4.66943e+06 -- feasibility (inf-norm): 725.509 -- constraint satisfaction (inf-norm): 62843.3-- full objective: 3.94027e+13G norm: 180.89
+Iteration 115 -- objective cost: nan -- feasibility (inf-norm): nan -- constraint satisfaction (inf-norm): 2.09995e+84-- full objective: nanG norm: 211.497
+Finished at iteration 117 -- objective cost: nan -- feasibility (inf-norm): nan -- constraint satisfaction (inf-norm): nan
+
+---------------------------------
+TIMING:
+---------------------------------
+Total time spent in dynamics: 16.4403 (sec)
+Total time spent in first ADMM update: 2.1757 (sec)
+Total time spent in second ADMM update: 28.8931 (sec)
+Total update time: 31.0688 (sec)

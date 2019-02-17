@@ -140,6 +140,8 @@ namespace drake {
             context_(system_->CreateDefaultContext()),
             continuous_state_(system_->AllocateTimeDerivatives()) {
                 DRAKE_DEMAND(context.has_only_continuous_state());
+                DRAKE_DEMAND(minimum_timestep == maximum_timestep);
+                timestep = minimum_timestep;
                 
                 context_->SetTimeStateAndParametersFrom(context);
                 
@@ -171,7 +173,7 @@ namespace drake {
                 // Add the dynamic constraints.
                 auto constraint = std::make_shared<InterpolatedObstacleConstraint>(num_states(), num_inputs(), obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, num_alpha);
                 
-                //DRAKE_ASSERT(static_cast<int>(constraint->num_constraints()) == num_states());
+                DRAKE_ASSERT(static_cast<int>(constraint->num_constraints()) == num_alpha * obstacle_center_x.size());
                 
                 // For N-1 timesteps, add a constraint which depends on the knot
                 // value along with the state and input vectors at that knot and the
@@ -190,12 +192,16 @@ namespace drake {
                 // g_0*h_0/2.0 + [sum_{i=1...N-2} g_i*(h_{i-1} + h_i)/2.0] +
                 // g_{N-1}*h_{N-2}/2.0.
                 
-                AddCost(SubstitutePlaceholderVariables(g * h_vars()(0) / 2, 0));
-                for (int i = 1; i <= N() - 2; i++) {
-                    AddCost(SubstitutePlaceholderVariables(
-                                                           g * (h_vars()(i - 1) + h_vars()(i)) / 2, i));
+                //AddCost(SubstitutePlaceholderVariables(g * h_vars()(0) / 2, 0));
+                //for (int i = 1; i <= N() - 2; i++) {
+                //    AddCost(SubstitutePlaceholderVariables(
+                //                                           g * (h_vars()(i - 1) + h_vars()(i)) / 2, i));
+                //}
+                //AddCost(SubstitutePlaceholderVariables(g * h_vars()(N() - 2) / 2, N() - 1));
+                for (int i = 0; i < N() - 1; i++) {
+                    AddCost(SubstitutePlaceholderVariables(g * timestep, i));
                 }
-                AddCost(SubstitutePlaceholderVariables(g * h_vars()(N() - 2) / 2, N() - 1));
+                // assumes minimum_timestep = maximum_timestep
             }
             
             PiecewisePolynomial<double>
@@ -264,12 +270,17 @@ namespace drake {
             /* INTERPOLATED OBSTACLE AVOIDANCE CONSTRAINT METHODS */
             InterpolatedObstacleConstraint::InterpolatedObstacleConstraint(int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii_x, Eigen::Ref<Eigen::VectorXd> obstacle_radii_y, int num_alpha): Constraint(num_alpha * obstacle_radii_x.size(), 1 + (2 * num_states) + (2 * num_inputs), -100000 * Eigen::VectorXd::Ones(obstacle_radii_x.size() * num_alpha), Eigen::VectorXd::Zero(obstacle_radii_x.size() * num_alpha)) {
                 
+                std::cout << "num states: " << num_states << std::endl;
+                std::cout << "num inputs: " << num_inputs << std::endl;
+                std::cout << "num alpha: " << num_alpha << std::endl;
+                std::cout << "constraint size: " << num_alpha * obstacle_radii_x.size() << std::endl;
+                
                 num_states_ = num_states;
                 num_inputs_ = num_inputs;
                 obstacle_center_x_ = obstacle_center_x;
                 obstacle_center_y_ = obstacle_center_y;
-                obstacle_radii_x_ = obstacle_radii_x_;
-                obstacle_radii_y_ = obstacle_radii_y_;
+                obstacle_radii_x_ = obstacle_radii_x;
+                obstacle_radii_y_ = obstacle_radii_y;
                 num_alpha_ = num_alpha;
             }
             
@@ -286,8 +297,8 @@ namespace drake {
                 DRAKE_ASSERT(x.size() == 1 + (2 * num_states_) + (2 * num_inputs_));
                 
                 const AutoDiffXd h = x(0);
-                //const auto x1 = x.segment(1, num_states_);
-                //const auto x2 = x.segment(1 + num_states_, num_states_);
+                const auto x1 = x.segment(1, num_states_);
+                const auto x2 = x.segment(1 + num_states_, num_states_);
                 //const auto u1 = x.segment(1 + (2 * num_states_), num_inputs_);
                 //const auto u2 = x.segment(1 + (2 * num_states_) + num_inputs_, num_inputs_);
                 
@@ -296,7 +307,7 @@ namespace drake {
                     alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha_));
                 }
                 
-                /* uncomment later
+                // uncomment later
                 for (int i = 0; i < obstacle_radii_x_.size(); i++) {
                     for (int ii = 0; ii < num_alpha_; ii++) {
                         // entries of d
@@ -307,10 +318,7 @@ namespace drake {
                         ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i]) *
                         ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i])/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
                     }
-                } */
-                
-                std::cout << "in constraint?" << std::endl;
-                std::cout << y->size() << std::endl;
+                }
             }
             
             void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const VectorX<symbolic::Variable>>&,

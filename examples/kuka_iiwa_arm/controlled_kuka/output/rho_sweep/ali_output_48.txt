@@ -1,0 +1,39 @@
+
+---------------------------------
+STARTING SOLVE:
+---------------------------------
+num states (in ADMM): 14
+num inputs (in ADMM): 7
+num constraints per point = 2058
+constraints list length = 196
+
+Iteration 0 -- objective cost: 0.00363878 -- feasibility (inf-norm): 1.1273 -- constraint satisfaction (inf-norm): 0-- full objective: 3017.61G norm: 0
+Iteration 5 -- objective cost: 0.273362 -- feasibility (inf-norm): 0.392763 -- constraint satisfaction (inf-norm): 0-- full objective: 1691.42G norm: 0
+Iteration 10 -- objective cost: 1.77334 -- feasibility (inf-norm): 1.03273 -- constraint satisfaction (inf-norm): 0-- full objective: 3050.67G norm: 0
+Iteration 15 -- objective cost: 4.24862 -- feasibility (inf-norm): 0.644412 -- constraint satisfaction (inf-norm): 0.239836-- full objective: 8279.68G norm: 14.5282
+Iteration 20 -- objective cost: 6.67379 -- feasibility (inf-norm): 0.752529 -- constraint satisfaction (inf-norm): 0.370992-- full objective: 11963.8G norm: 11.018
+Iteration 25 -- objective cost: 7.3724 -- feasibility (inf-norm): 0.645447 -- constraint satisfaction (inf-norm): 0.0402729-- full objective: 1835.04G norm: 13.6666
+Iteration 30 -- objective cost: 8.90151 -- feasibility (inf-norm): 0.953677 -- constraint satisfaction (inf-norm): 19.3533-- full objective: 2.11148e+07G norm: 22.4822
+Iteration 35 -- objective cost: 13.0164 -- feasibility (inf-norm): 1.76396 -- constraint satisfaction (inf-norm): 9.27777-- full objective: 6.31045e+06G norm: 27.5175
+Iteration 40 -- objective cost: 31.1343 -- feasibility (inf-norm): 2.49213 -- constraint satisfaction (inf-norm): 29.0092-- full objective: 8.6572e+07G norm: 45.1463
+Iteration 45 -- objective cost: 75.0827 -- feasibility (inf-norm): 2.86331 -- constraint satisfaction (inf-norm): 33.6639-- full objective: 2.75416e+08G norm: 49.6831
+Iteration 50 -- objective cost: 2370.95 -- feasibility (inf-norm): 16.654 -- constraint satisfaction (inf-norm): 361.113-- full objective: 2.24473e+10G norm: 95.8418
+Iteration 55 -- objective cost: 3322.57 -- feasibility (inf-norm): 37.7657 -- constraint satisfaction (inf-norm): 1370.05-- full objective: 2.39502e+11G norm: 102.991
+Iteration 60 -- objective cost: 8411.78 -- feasibility (inf-norm): 44.814 -- constraint satisfaction (inf-norm): 2338.45-- full objective: 1.04466e+12G norm: 130.898
+Iteration 65 -- objective cost: 50455.5 -- feasibility (inf-norm): 144.749 -- constraint satisfaction (inf-norm): 3160.92-- full objective: 2.12219e+12G norm: 160.272
+Iteration 70 -- objective cost: 577886 -- feasibility (inf-norm): 944.751 -- constraint satisfaction (inf-norm): 5987.47-- full objective: 8.07239e+12G norm: 195.877
+Iteration 75 -- objective cost: 1.22821e+06 -- feasibility (inf-norm): 3093.48 -- constraint satisfaction (inf-norm): 23355.4-- full objective: 8.8354e+13G norm: 231.347
+Iteration 80 -- objective cost: 1.71825e+06 -- feasibility (inf-norm): 562.087 -- constraint satisfaction (inf-norm): 53051.3-- full objective: 3.71262e+14G norm: 262.077
+Iteration 85 -- objective cost: 2.2993e+07 -- feasibility (inf-norm): 1227.05 -- constraint satisfaction (inf-norm): 42854.6-- full objective: 3.69726e+14G norm: 296.178
+Iteration 90 -- objective cost: 2.97269e+06 -- feasibility (inf-norm): 1470.39 -- constraint satisfaction (inf-norm): 101136-- full objective: 1.92878e+15G norm: 344.026
+Iteration 95 -- objective cost: 2.15148e+07 -- feasibility (inf-norm): 6451.26 -- constraint satisfaction (inf-norm): 1.82855e+06-- full objective: 2.8164e+17G norm: 392.392
+Iteration 100 -- objective cost: 1.99974e+09 -- feasibility (inf-norm): 19799.3 -- constraint satisfaction (inf-norm): 281917-- full objective: 1.1892e+16G norm: 447.555
+Finished at iteration 105 -- objective cost: nan -- feasibility (inf-norm): nan -- constraint satisfaction (inf-norm): nan
+
+---------------------------------
+TIMING:
+---------------------------------
+Total time spent in dynamics: 15.2116 (sec)
+Total time spent in first ADMM update: 1.94677 (sec)
+Total time spent in second ADMM update: 76.4415 (sec)
+Total update time: 78.3883 (sec)

@@ -45,6 +45,7 @@ drake_cc_binary(
 drake_cc_binary(
     name = "run_kuka_arm_tests",
     srcs = ["run_kuka_arm_tests.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
     data = [
         "//examples/kuka_iiwa_arm:models",
         "//manipulation/models/iiwa_description:models",
@@ -63,10 +64,41 @@ drake_cc_binary(
         "//systems/controllers:inverse_dynamics_controller",
         "//systems/primitives:trajectory_source",
 	"//systems/trajectory_optimization:midpoint_transcription",
+	"//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//systems/trajectory_optimization:admm_solver_al",
+	"//systems/trajectory_optimization:admm_solver_al_ineq",
         "@gflags",
     ],
 )
 
+drake_cc_binary(
+    name = "run_kuka_arm_tests_rho_sweep",
+    srcs = ["run_kuka_arm_tests_rho_sweep.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    data = [
+        "//examples/kuka_iiwa_arm:models",
+        "//manipulation/models/iiwa_description:models",
+    ],
+    deps = [
+        ":controlled_kuka_trajectory",
+        "//common:find_resource",
+        "//examples/kuka_iiwa_arm:iiwa_common",
+        "//geometry:geometry_visualization",
+        "//geometry:scene_graph",
+        "//lcm",
+        "//manipulation/util:sim_diagram_builder",
+        "//multibody/multibody_tree/multibody_plant",
+        "//multibody/multibody_tree/parsing:multibody_plant_sdf_parser",
+        "//systems/analysis:simulator",
+        "//systems/controllers:inverse_dynamics_controller",
+        "//systems/primitives:trajectory_source",
+	"//systems/trajectory_optimization:midpoint_transcription",
+	"//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//systems/trajectory_optimization:admm_solver_al",
+	"//systems/trajectory_optimization:admm_solver_al_ineq",
+        "@gflags",
+    ],
+)
 
 drake_cc_binary(
     name = "visualize_kuka_solutions",

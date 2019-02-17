@@ -234,6 +234,103 @@ drake_cc_binary(
     ],
 )
 
+drake_cc_binary(
+    name = "run_all_quadrotor_tests",
+    srcs = ["run_all_quadrotor_tests.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":quadrotor_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/primitives:trajectory_source",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
+	"//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//systems/trajectory_optimization:admm_solver_al",
+	"//systems/trajectory_optimization:admm_solver_al_ineq",
+	"//systems/trajectory_optimization:ali_solver_res",
+	"//systems/trajectory_optimization:admm_solver_scaled",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
+
+
+drake_cc_binary(
+    name = "run_all_quadrotor_test_tolerances",
+    srcs = ["run_all_quadrotor_test_tolerances.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":quadrotor_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/primitives:trajectory_source",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
+	"//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//systems/trajectory_optimization:admm_solver_al",
+	"//systems/trajectory_optimization:admm_solver_al_ineq",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
+
+
+drake_cc_binary(
+    name = "run_quadrotor_al_test",
+    srcs = ["run_quadrotor_al_test.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":quadrotor_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/primitives:trajectory_source",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
+	"//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//systems/trajectory_optimization:admm_solver_al",
+	"//systems/trajectory_optimization:admm_solver_al_ineq",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
+
+drake_cc_binary(
+    name = "run_quadrotor_scaling",
+    srcs = ["run_quadrotor_scaling.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":quadrotor_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/primitives:trajectory_source",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
+	"//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//systems/trajectory_optimization:admm_solver_al",
+	"//systems/trajectory_optimization:admm_solver_al_ineq",
+	"//systems/trajectory_optimization:admm_solver_scaled",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
+
 install_data()
 
 add_lint_tests()

@@ -77,6 +77,14 @@ namespace drake {
                 void AdmmSolverWeighted::setRho3(double rho) {
                     initial_rho3 = rho;
                 }
+                /*
+                void AdmmSolverWeighted::setCostQ(Eigen::Ref<Eigen::MatrixXd> Q) {
+                    costQ = Q;
+                }
+                
+                void AdmmSolverWeighted::setCostR(Eigen::Ref<Eigen::MatrixXd> R) {
+                    costR = R;
+                } */
                 
                 void AdmmSolverWeighted::setFeasibilityTolerance(double tol) {
                     tol_feasibility = tol;

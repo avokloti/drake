@@ -1,0 +1,160 @@
+
+---------------------------------
+STARTING SOLVE:
+---------------------------------
+num states (in ADMM): 12
+num inputs (in ADMM): 4
+num constraints per point = 32
+constraints list length = 4
+
+Iteration 0 -- objective cost: 12.142 -- feasibility (inf-norm): 4.40265 -- constraint satisfaction (inf-norm): 0-- full objective: 574.499G norm: 0
+Iteration 5 -- objective cost: 53.7084 -- feasibility (inf-norm): 1.96834 -- constraint satisfaction (inf-norm): 0-- full objective: 242.976G norm: 0
+Iteration 10 -- objective cost: 62.2974 -- feasibility (inf-norm): 1.33811 -- constraint satisfaction (inf-norm): 0-- full objective: 201.257G norm: 0
+Iteration 15 -- objective cost: 66.6607 -- feasibility (inf-norm): 1.01611 -- constraint satisfaction (inf-norm): 0-- full objective: 182.617G norm: 0
+Iteration 20 -- objective cost: 70.5044 -- feasibility (inf-norm): 0.807432 -- constraint satisfaction (inf-norm): 0.00921758-- full objective: 170.706G norm: 1.05
+Iteration 25 -- objective cost: 74.1499 -- feasibility (inf-norm): 0.658223 -- constraint satisfaction (inf-norm): 0.0345533-- full objective: 162.044G norm: 1.3401
+Iteration 30 -- objective cost: 77.6228 -- feasibility (inf-norm): 0.548367 -- constraint satisfaction (inf-norm): 0.0420525-- full objective: 155.331G norm: 1.71034
+Iteration 35 -- objective cost: 80.9261 -- feasibility (inf-norm): 0.46769 -- constraint satisfaction (inf-norm): 0.0371657-- full objective: 149.91G norm: 2.40103
+Iteration 40 -- objective cost: 84.0506 -- feasibility (inf-norm): 0.430702 -- constraint satisfaction (inf-norm): 0.0267798-- full objective: 145.447G norm: 3.06439
+Iteration 45 -- objective cost: 86.9978 -- feasibility (inf-norm): 0.395101 -- constraint satisfaction (inf-norm): 0.0172117-- full objective: 141.724G norm: 3.91102
+Iteration 50 -- objective cost: 89.768 -- feasibility (inf-norm): 0.362099 -- constraint satisfaction (inf-norm): 0.0144894-- full objective: 138.592G norm: 4.99157
+Iteration 55 -- objective cost: 92.3612 -- feasibility (inf-norm): 0.331661 -- constraint satisfaction (inf-norm): 0.0113074-- full objective: 135.945G norm: 6.37065
+Iteration 60 -- objective cost: 94.7789 -- feasibility (inf-norm): 0.303013 -- constraint satisfaction (inf-norm): 0.00818324-- full objective: 133.705G norm: 8.13074
+Iteration 65 -- objective cost: 97.025 -- feasibility (inf-norm): 0.276266 -- constraint satisfaction (inf-norm): 0.00566784-- full objective: 131.81G norm: 10.3771
+Iteration 70 -- objective cost: 99.1052 -- feasibility (inf-norm): 0.252148 -- constraint satisfaction (inf-norm): 0.00381662-- full objective: 130.205G norm: 13.2441
+Iteration 75 -- objective cost: 101.027 -- feasibility (inf-norm): 0.229744 -- constraint satisfaction (inf-norm): 0.00251886-- full objective: 128.849G norm: 16.9032
+Iteration 80 -- objective cost: 102.798 -- feasibility (inf-norm): 0.209026 -- constraint satisfaction (inf-norm): 0.00163633-- full objective: 127.706G norm: 21.5733
+Iteration 85 -- objective cost: 104.427 -- feasibility (inf-norm): 0.190775 -- constraint satisfaction (inf-norm): 0.00104911-- full objective: 126.746G norm: 27.5336
+Iteration 90 -- objective cost: 105.923 -- feasibility (inf-norm): 0.174256 -- constraint satisfaction (inf-norm): 0.000654733-- full objective: 125.942G norm: 14.6356
+Iteration 95 -- objective cost: 107.294 -- feasibility (inf-norm): 0.159032 -- constraint satisfaction (inf-norm): 0.000391055-- full objective: 125.262G norm: 18.6792
+Iteration 100 -- objective cost: 108.55 -- feasibility (inf-norm): 0.145036 -- constraint satisfaction (inf-norm): 0.00023059-- full objective: 124.687G norm: 23.8399
+Iteration 105 -- objective cost: 109.703 -- feasibility (inf-norm): 0.131893 -- constraint satisfaction (inf-norm): 0.000133626-- full objective: 124.122G norm: 30.4264
+Iteration 110 -- objective cost: 110.722 -- feasibility (inf-norm): 0.119814 -- constraint satisfaction (inf-norm): 7.3814e-05-- full objective: 123.522G norm: 38.8327
+Iteration 115 -- objective cost: 111.598 -- feasibility (inf-norm): 0.108912 -- constraint satisfaction (inf-norm): 3.88258e-05-- full objective: 122.96G norm: 49.5614
+Iteration 120 -- objective cost: 112.363 -- feasibility (inf-norm): 0.0992309 -- constraint satisfaction (inf-norm): 2.0153e-05-- full objective: 122.536G norm: 63.2544
+Iteration 125 -- objective cost: 113.062 -- feasibility (inf-norm): 0.0904766 -- constraint satisfaction (inf-norm): 1.07904e-05-- full objective: 122.234G norm: 80.7304
+Iteration 130 -- objective cost: 113.705 -- feasibility (inf-norm): 0.0825054 -- constraint satisfaction (inf-norm): 5.92439e-06-- full objective: 122.005G norm: 103.035
+Iteration 135 -- objective cost: 114.301 -- feasibility (inf-norm): 0.07523 -- constraint satisfaction (inf-norm): 3.314e-06-- full objective: 121.825G norm: 131.501
+Iteration 140 -- objective cost: 114.853 -- feasibility (inf-norm): 0.0685813 -- constraint satisfaction (inf-norm): 1.87845e-06-- full objective: 121.681G norm: 167.833
+Iteration 145 -- objective cost: 115.364 -- feasibility (inf-norm): 0.0625017 -- constraint satisfaction (inf-norm): 1.0745e-06-- full objective: 121.564G norm: 214.202
+Iteration 150 -- objective cost: 115.837 -- feasibility (inf-norm): 0.0569413 -- constraint satisfaction (inf-norm): 6.18533e-07-- full objective: 121.468G norm: 273.382
+Iteration 155 -- objective cost: 116.274 -- feasibility (inf-norm): 0.0518561 -- constraint satisfaction (inf-norm): 3.57714e-07-- full objective: 121.389G norm: 348.912
+Iteration 160 -- objective cost: 116.678 -- feasibility (inf-norm): 0.0472071 -- constraint satisfaction (inf-norm): 2.07644e-07-- full objective: 121.323G norm: 445.31
+Iteration 165 -- objective cost: 117.051 -- feasibility (inf-norm): 0.0429584 -- constraint satisfaction (inf-norm): 1.20928e-07-- full objective: 121.269G norm: 568.341
+Iteration 170 -- objective cost: 117.393 -- feasibility (inf-norm): 0.0390776 -- constraint satisfaction (inf-norm): 7.06455e-08-- full objective: 121.224G norm: 725.363
+Iteration 175 -- objective cost: 117.709 -- feasibility (inf-norm): 0.0355348 -- constraint satisfaction (inf-norm): 4.1398e-08-- full objective: 121.186G norm: 925.767
+Iteration 180 -- objective cost: 117.998 -- feasibility (inf-norm): 0.0323022 -- constraint satisfaction (inf-norm): 2.43341e-08-- full objective: 121.155G norm: 1181.54
+Iteration 185 -- objective cost: 118.264 -- feasibility (inf-norm): 0.0293544 -- constraint satisfaction (inf-norm): 1.43482e-08-- full objective: 121.129G norm: 1507.98
+Iteration 190 -- objective cost: 118.507 -- feasibility (inf-norm): 0.0266678 -- constraint satisfaction (inf-norm): 8.48627e-09-- full objective: 121.108G norm: 1924.6
+Iteration 195 -- objective cost: 118.73 -- feasibility (inf-norm): 0.0242205 -- constraint satisfaction (inf-norm): 5.03433e-09-- full objective: 121.09G norm: 2456.34
+Iteration 200 -- objective cost: 118.934 -- feasibility (inf-norm): 0.0219922 -- constraint satisfaction (inf-norm): 2.99551e-09-- full objective: 121.075G norm: 3134.98
+Iteration 205 -- objective cost: 119.12 -- feasibility (inf-norm): 0.0199643 -- constraint satisfaction (inf-norm): 1.78751e-09-- full objective: 121.062G norm: 4001.11
+Iteration 210 -- objective cost: 119.29 -- feasibility (inf-norm): 0.0181196 -- constraint satisfaction (inf-norm): 1.06968e-09-- full objective: 121.052G norm: 5106.55
+Iteration 215 -- objective cost: 119.445 -- feasibility (inf-norm): 0.0164421 -- constraint satisfaction (inf-norm): 5.88703e-10-- full objective: 121.043G norm: 5841.44
+Iteration 220 -- objective cost: 119.587 -- feasibility (inf-norm): 0.0149173 -- constraint satisfaction (inf-norm): 5.76739e-10-- full objective: 121.036G norm: 4576.92
+Iteration 225 -- objective cost: 119.716 -- feasibility (inf-norm): 0.0135317 -- constraint satisfaction (inf-norm): 5.65958e-10-- full objective: 121.03G norm: 3586.14
+Iteration 230 -- objective cost: 119.833 -- feasibility (inf-norm): 0.0122731 -- constraint satisfaction (inf-norm): 5.5715e-10-- full objective: 121.025G norm: 2809.83
+Iteration 235 -- objective cost: 119.94 -- feasibility (inf-norm): 0.01113 -- constraint satisfaction (inf-norm): 5.48916e-10-- full objective: 121.02G norm: 2201.58
+Iteration 240 -- objective cost: 120.038 -- feasibility (inf-norm): 0.0100922 -- constraint satisfaction (inf-norm): 5.41933e-10-- full objective: 121.017G norm: 1724.99
+Iteration 245 -- objective cost: 120.126 -- feasibility (inf-norm): 0.00915014 -- constraint satisfaction (inf-norm): 5.35847e-10-- full objective: 121.014G norm: 1351.58
+Iteration 250 -- objective cost: 120.207 -- feasibility (inf-norm): 0.00829521 -- constraint satisfaction (inf-norm): 5.30545e-10-- full objective: 121.011G norm: 1059
+Iteration 255 -- objective cost: 120.28 -- feasibility (inf-norm): 0.00751949 -- constraint satisfaction (inf-norm): 5.26033e-10-- full objective: 121.009G norm: 829.751
+Iteration 260 -- objective cost: 120.346 -- feasibility (inf-norm): 0.00681576 -- constraint satisfaction (inf-norm): 5.22144e-10-- full objective: 121.007G norm: 650.132
+Iteration 265 -- objective cost: 120.407 -- feasibility (inf-norm): 0.00617743 -- constraint satisfaction (inf-norm): 5.18786e-10-- full objective: 121.005G norm: 509.395
+Iteration 270 -- objective cost: 120.462 -- feasibility (inf-norm): 0.00559852 -- constraint satisfaction (inf-norm): 5.15899e-10-- full objective: 121.004G norm: 399.125
+Iteration 275 -- objective cost: 120.511 -- feasibility (inf-norm): 0.00507356 -- constraint satisfaction (inf-norm): 5.13474e-10-- full objective: 121.003G norm: 312.725
+Iteration 280 -- objective cost: 120.557 -- feasibility (inf-norm): 0.00459757 -- constraint satisfaction (inf-norm): 5.11379e-10-- full objective: 121.002G norm: 245.028
+Iteration 285 -- objective cost: 120.598 -- feasibility (inf-norm): 0.00416604 -- constraint satisfaction (inf-norm): 5.09624e-10-- full objective: 121.001G norm: 191.986
+Iteration 290 -- objective cost: 120.635 -- feasibility (inf-norm): 0.00377484 -- constraint satisfaction (inf-norm): 5.08137e-10-- full objective: 121.001G norm: 150.426
+Iteration 295 -- objective cost: 120.669 -- feasibility (inf-norm): 0.00342024 -- constraint satisfaction (inf-norm): 5.06905e-10-- full objective: 121G norm: 117.863
+Iteration 300 -- objective cost: 120.699 -- feasibility (inf-norm): 0.00309884 -- constraint satisfaction (inf-norm): 5.05883e-10-- full objective: 120.999G norm: 92.3484
+Iteration 305 -- objective cost: 120.727 -- feasibility (inf-norm): 0.00280755 -- constraint satisfaction (inf-norm): 5.05045e-10-- full objective: 120.999G norm: 72.3574
+Iteration 310 -- objective cost: 120.752 -- feasibility (inf-norm): 0.00254357 -- constraint satisfaction (inf-norm): 5.04355e-10-- full objective: 120.999G norm: 56.6939
+Iteration 315 -- objective cost: 120.775 -- feasibility (inf-norm): 0.00230435 -- constraint satisfaction (inf-norm): 5.03814e-10-- full objective: 120.998G norm: 44.4212
+Iteration 320 -- objective cost: 120.796 -- feasibility (inf-norm): 0.00208758 -- constraint satisfaction (inf-norm): 5.03385e-10-- full objective: 120.998G norm: 34.8052
+Iteration 325 -- objective cost: 120.815 -- feasibility (inf-norm): 0.00189115 -- constraint satisfaction (inf-norm): 5.03057e-10-- full objective: 120.998G norm: 27.2708
+Iteration 330 -- objective cost: 120.832 -- feasibility (inf-norm): 0.00171318 -- constraint satisfaction (inf-norm): 5.0282e-10-- full objective: 120.998G norm: 21.3673
+Iteration 335 -- objective cost: 120.847 -- feasibility (inf-norm): 0.00155193 -- constraint satisfaction (inf-norm): 5.02654e-10-- full objective: 120.997G norm: 16.7419
+Iteration 340 -- objective cost: 120.861 -- feasibility (inf-norm): 0.00140583 -- constraint satisfaction (inf-norm): 5.02553e-10-- full objective: 120.997G norm: 13.1177
+Iteration 345 -- objective cost: 120.874 -- feasibility (inf-norm): 0.00127347 -- constraint satisfaction (inf-norm): 5.02505e-10-- full objective: 120.997G norm: 10.2781
+Iteration 350 -- objective cost: 120.885 -- feasibility (inf-norm): 0.00115356 -- constraint satisfaction (inf-norm): 5.02504e-10-- full objective: 120.997G norm: 8.05313
+Iteration 355 -- objective cost: 120.896 -- feasibility (inf-norm): 0.00104492 -- constraint satisfaction (inf-norm): 5.02543e-10-- full objective: 120.997G norm: 6.30984
+Iteration 360 -- objective cost: 120.905 -- feasibility (inf-norm): 0.000946509 -- constraint satisfaction (inf-norm): 5.02613e-10-- full objective: 120.997G norm: 4.94392
+Iteration 365 -- objective cost: 120.914 -- feasibility (inf-norm): 0.000857356 -- constraint satisfaction (inf-norm): 5.0271e-10-- full objective: 120.997G norm: 3.87369
+Iteration 370 -- objective cost: 120.922 -- feasibility (inf-norm): 0.000776594 -- constraint satisfaction (inf-norm): 5.02829e-10-- full objective: 120.997G norm: 3.03514
+Iteration 375 -- objective cost: 120.929 -- feasibility (inf-norm): 0.000703434 -- constraint satisfaction (inf-norm): 5.02967e-10-- full objective: 120.997G norm: 2.37811
+Iteration 380 -- objective cost: 120.935 -- feasibility (inf-norm): 0.000637162 -- constraint satisfaction (inf-norm): 5.03119e-10-- full objective: 120.997G norm: 1.86331
+Iteration 385 -- objective cost: 120.941 -- feasibility (inf-norm): 0.000577129 -- constraint satisfaction (inf-norm): 5.03282e-10-- full objective: 120.997G norm: 1.45995
+Iteration 390 -- objective cost: 120.946 -- feasibility (inf-norm): 0.000522751 -- constraint satisfaction (inf-norm): 5.03455e-10-- full objective: 120.997G norm: 1.14391
+Iteration 395 -- objective cost: 120.951 -- feasibility (inf-norm): 0.000473493 -- constraint satisfaction (inf-norm): 5.55257e-10-- full objective: 120.997G norm: 1
+Iteration 400 -- objective cost: 120.955 -- feasibility (inf-norm): 0.000428875 -- constraint satisfaction (inf-norm): 5.55461e-10-- full objective: 120.997G norm: 1
+Iteration 405 -- objective cost: 120.959 -- feasibility (inf-norm): 0.00038846 -- constraint satisfaction (inf-norm): 5.55668e-10-- full objective: 120.997G norm: 1
+Iteration 410 -- objective cost: 120.962 -- feasibility (inf-norm): 0.000351852 -- constraint satisfaction (inf-norm): 5.55877e-10-- full objective: 120.997G norm: 1
+Iteration 415 -- objective cost: 120.966 -- feasibility (inf-norm): 0.000318693 -- constraint satisfaction (inf-norm): 5.56088e-10-- full objective: 120.996G norm: 1
+Iteration 420 -- objective cost: 120.969 -- feasibility (inf-norm): 0.000288658 -- constraint satisfaction (inf-norm): 5.56297e-10-- full objective: 120.996G norm: 1
+Iteration 425 -- objective cost: 120.971 -- feasibility (inf-norm): 0.000261452 -- constraint satisfaction (inf-norm): 5.56506e-10-- full objective: 120.996G norm: 1
+Iteration 430 -- objective cost: 120.974 -- feasibility (inf-norm): 0.000236811 -- constraint satisfaction (inf-norm): 5.56713e-10-- full objective: 120.996G norm: 1
+Iteration 435 -- objective cost: 120.976 -- feasibility (inf-norm): 0.000214491 -- constraint satisfaction (inf-norm): 5.56917e-10-- full objective: 120.996G norm: 1
+Iteration 440 -- objective cost: 120.978 -- feasibility (inf-norm): 0.000194275 -- constraint satisfaction (inf-norm): 5.57118e-10-- full objective: 120.996G norm: 1
+Iteration 445 -- objective cost: 120.979 -- feasibility (inf-norm): 0.000175963 -- constraint satisfaction (inf-norm): 5.57316e-10-- full objective: 120.996G norm: 1
+Iteration 450 -- objective cost: 120.981 -- feasibility (inf-norm): 0.000159378 -- constraint satisfaction (inf-norm): 5.5751e-10-- full objective: 120.996G norm: 1
+Iteration 455 -- objective cost: 120.982 -- feasibility (inf-norm): 0.000144355 -- constraint satisfaction (inf-norm): 5.577e-10-- full objective: 120.996G norm: 1
+Iteration 460 -- objective cost: 120.984 -- feasibility (inf-norm): 0.000130748 -- constraint satisfaction (inf-norm): 5.57885e-10-- full objective: 120.996G norm: 1
+Iteration 465 -- objective cost: 120.985 -- feasibility (inf-norm): 0.000118424 -- constraint satisfaction (inf-norm): 5.58067e-10-- full objective: 120.996G norm: 1
+Iteration 470 -- objective cost: 120.986 -- feasibility (inf-norm): 0.000107261 -- constraint satisfaction (inf-norm): 5.58243e-10-- full objective: 120.996G norm: 1
+Iteration 475 -- objective cost: 120.987 -- feasibility (inf-norm): 9.71509e-05 -- constraint satisfaction (inf-norm): 5.58415e-10-- full objective: 120.996G norm: 1
+Iteration 480 -- objective cost: 120.988 -- feasibility (inf-norm): 8.79932e-05 -- constraint satisfaction (inf-norm): 5.58583e-10-- full objective: 120.996G norm: 1
+Iteration 485 -- objective cost: 120.989 -- feasibility (inf-norm): 7.96987e-05 -- constraint satisfaction (inf-norm): 5.58746e-10-- full objective: 120.996G norm: 1
+Iteration 490 -- objective cost: 120.989 -- feasibility (inf-norm): 7.2186e-05 -- constraint satisfaction (inf-norm): 5.58904e-10-- full objective: 120.996G norm: 1
+Iteration 495 -- objective cost: 120.99 -- feasibility (inf-norm): 6.53815e-05 -- constraint satisfaction (inf-norm): 5.59058e-10-- full objective: 120.996G norm: 1
+Iteration 500 -- objective cost: 120.991 -- feasibility (inf-norm): 5.92183e-05 -- constraint satisfaction (inf-norm): 5.59207e-10-- full objective: 120.996G norm: 1
+Iteration 505 -- objective cost: 120.991 -- feasibility (inf-norm): 5.36361e-05 -- constraint satisfaction (inf-norm): 5.59352e-10-- full objective: 120.996G norm: 1
+Iteration 510 -- objective cost: 120.992 -- feasibility (inf-norm): 4.85801e-05 -- constraint satisfaction (inf-norm): 5.59493e-10-- full objective: 120.996G norm: 1
+Iteration 515 -- objective cost: 120.992 -- feasibility (inf-norm): 4.40006e-05 -- constraint satisfaction (inf-norm): 5.5963e-10-- full objective: 120.996G norm: 1
+Iteration 520 -- objective cost: 120.992 -- feasibility (inf-norm): 3.98529e-05 -- constraint satisfaction (inf-norm): 5.59762e-10-- full objective: 120.996G norm: 1
+Iteration 525 -- objective cost: 120.993 -- feasibility (inf-norm): 3.60961e-05 -- constraint satisfaction (inf-norm): 5.5989e-10-- full objective: 120.996G norm: 1
+Iteration 530 -- objective cost: 120.993 -- feasibility (inf-norm): 3.26934e-05 -- constraint satisfaction (inf-norm): 5.60014e-10-- full objective: 120.996G norm: 1
+Iteration 535 -- objective cost: 120.993 -- feasibility (inf-norm): 2.96115e-05 -- constraint satisfaction (inf-norm): 5.60135e-10-- full objective: 120.996G norm: 1
+Iteration 540 -- objective cost: 120.994 -- feasibility (inf-norm): 2.68201e-05 -- constraint satisfaction (inf-norm): 5.60252e-10-- full objective: 120.996G norm: 1
+Iteration 545 -- objective cost: 120.994 -- feasibility (inf-norm): 2.42919e-05 -- constraint satisfaction (inf-norm): 5.60365e-10-- full objective: 120.996G norm: 1
+Iteration 550 -- objective cost: 120.994 -- feasibility (inf-norm): 2.20019e-05 -- constraint satisfaction (inf-norm): 5.60475e-10-- full objective: 120.996G norm: 1
+Iteration 555 -- objective cost: 120.994 -- feasibility (inf-norm): 1.99279e-05 -- constraint satisfaction (inf-norm): 5.60581e-10-- full objective: 120.996G norm: 1
+Iteration 560 -- objective cost: 120.995 -- feasibility (inf-norm): 1.80493e-05 -- constraint satisfaction (inf-norm): 5.60684e-10-- full objective: 120.996G norm: 1
+Iteration 565 -- objective cost: 120.995 -- feasibility (inf-norm): 1.63478e-05 -- constraint satisfaction (inf-norm): 5.60784e-10-- full objective: 120.996G norm: 1
+Iteration 570 -- objective cost: 120.995 -- feasibility (inf-norm): 1.48068e-05 -- constraint satisfaction (inf-norm): 5.6088e-10-- full objective: 120.996G norm: 1
+Iteration 575 -- objective cost: 120.995 -- feasibility (inf-norm): 1.34109e-05 -- constraint satisfaction (inf-norm): 5.60974e-10-- full objective: 120.996G norm: 1
+Iteration 580 -- objective cost: 120.995 -- feasibility (inf-norm): 1.21467e-05 -- constraint satisfaction (inf-norm): 5.61065e-10-- full objective: 120.996G norm: 1
+Iteration 585 -- objective cost: 120.995 -- feasibility (inf-norm): 1.10017e-05 -- constraint satisfaction (inf-norm): 5.61153e-10-- full objective: 120.996G norm: 1
+Iteration 590 -- objective cost: 120.995 -- feasibility (inf-norm): 9.96456e-06 -- constraint satisfaction (inf-norm): 5.61238e-10-- full objective: 120.996G norm: 1
+Iteration 595 -- objective cost: 120.995 -- feasibility (inf-norm): 9.02521e-06 -- constraint satisfaction (inf-norm): 5.61321e-10-- full objective: 120.996G norm: 1
+Iteration 600 -- objective cost: 120.996 -- feasibility (inf-norm): 8.17442e-06 -- constraint satisfaction (inf-norm): 5.61401e-10-- full objective: 120.996G norm: 1
+Iteration 605 -- objective cost: 120.996 -- feasibility (inf-norm): 7.40383e-06 -- constraint satisfaction (inf-norm): 5.61479e-10-- full objective: 120.996G norm: 1
+Iteration 610 -- objective cost: 120.996 -- feasibility (inf-norm): 6.70588e-06 -- constraint satisfaction (inf-norm): 5.61555e-10-- full objective: 120.996G norm: 1
+Iteration 615 -- objective cost: 120.996 -- feasibility (inf-norm): 6.07372e-06 -- constraint satisfaction (inf-norm): 5.61628e-10-- full objective: 120.996G norm: 1
+Iteration 620 -- objective cost: 120.996 -- feasibility (inf-norm): 5.50116e-06 -- constraint satisfaction (inf-norm): 5.61699e-10-- full objective: 120.996G norm: 1
+Iteration 625 -- objective cost: 120.996 -- feasibility (inf-norm): 4.98257e-06 -- constraint satisfaction (inf-norm): 5.61768e-10-- full objective: 120.996G norm: 1
+Iteration 630 -- objective cost: 120.996 -- feasibility (inf-norm): 4.51287e-06 -- constraint satisfaction (inf-norm): 5.61834e-10-- full objective: 120.996G norm: 1
+Iteration 635 -- objective cost: 120.996 -- feasibility (inf-norm): 4.08745e-06 -- constraint satisfaction (inf-norm): 5.619e-10-- full objective: 120.996G norm: 1
+Iteration 640 -- objective cost: 120.996 -- feasibility (inf-norm): 3.70213e-06 -- constraint satisfaction (inf-norm): 5.61962e-10-- full objective: 120.996G norm: 1
+Iteration 645 -- objective cost: 120.996 -- feasibility (inf-norm): 3.35313e-06 -- constraint satisfaction (inf-norm): 5.62024e-10-- full objective: 120.996G norm: 1
+Iteration 650 -- objective cost: 120.996 -- feasibility (inf-norm): 3.03704e-06 -- constraint satisfaction (inf-norm): 5.62083e-10-- full objective: 120.996G norm: 1
+Iteration 655 -- objective cost: 120.996 -- feasibility (inf-norm): 2.75074e-06 -- constraint satisfaction (inf-norm): 5.6214e-10-- full objective: 120.996G norm: 1
+Iteration 660 -- objective cost: 120.996 -- feasibility (inf-norm): 2.49143e-06 -- constraint satisfaction (inf-norm): 5.62196e-10-- full objective: 120.996G norm: 1
+Iteration 665 -- objective cost: 120.996 -- feasibility (inf-norm): 2.25657e-06 -- constraint satisfaction (inf-norm): 5.6225e-10-- full objective: 120.996G norm: 1
+Iteration 670 -- objective cost: 120.996 -- feasibility (inf-norm): 2.04384e-06 -- constraint satisfaction (inf-norm): 5.62304e-10-- full objective: 120.996G norm: 1
+Iteration 675 -- objective cost: 120.996 -- feasibility (inf-norm): 1.85117e-06 -- constraint satisfaction (inf-norm): 5.62355e-10-- full objective: 120.996G norm: 1
+Iteration 680 -- objective cost: 120.996 -- feasibility (inf-norm): 1.67666e-06 -- constraint satisfaction (inf-norm): 5.62404e-10-- full objective: 120.996G norm: 1
+Iteration 685 -- objective cost: 120.996 -- feasibility (inf-norm): 1.5186e-06 -- constraint satisfaction (inf-norm): 5.62453e-10-- full objective: 120.996G norm: 1
+Iteration 690 -- objective cost: 120.996 -- feasibility (inf-norm): 1.37545e-06 -- constraint satisfaction (inf-norm): 5.625e-10-- full objective: 120.996G norm: 1
+Iteration 695 -- objective cost: 120.996 -- feasibility (inf-norm): 1.24579e-06 -- constraint satisfaction (inf-norm): 5.62547e-10-- full objective: 120.996G norm: 1
+Iteration 700 -- objective cost: 120.996 -- feasibility (inf-norm): 1.12835e-06 -- constraint satisfaction (inf-norm): 5.62591e-10-- full objective: 120.996G norm: 1
+Iteration 705 -- objective cost: 120.996 -- feasibility (inf-norm): 1.02198e-06 -- constraint satisfaction (inf-norm): 5.62634e-10-- full objective: 120.996G norm: 1
+Finished at iteration 708 -- objective cost: 120.996 -- feasibility (inf-norm): 9.82294e-07 -- constraint satisfaction (inf-norm): 5.6265e-10
+
+---------------------------------
+TIMING:
+---------------------------------
+Total time spent in dynamics: 0.90609 (sec)
+Total time spent in first ADMM update: 0.844306 (sec)
+Total time spent in second ADMM update: 1.56998 (sec)
+Total update time: 2.41428 (sec)

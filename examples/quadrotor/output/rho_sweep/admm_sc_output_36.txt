@@ -1,0 +1,77 @@
+
+---------------------------------
+STARTING SOLVE:
+---------------------------------
+num states (in ADMM): 12
+num inputs (in ADMM): 4
+num constraints per point = 36
+constraints list length = 5
+
+Iteration 0 -- objective cost: 87.1351 -- feasibility: 0.0146005 -- unscaled feasibility: 1.74789 -- constraints: 0 -- unscaled constraints: 0-- full objective: 9.75969
+Iteration 1 -- objective cost: 65.7563 -- feasibility: 0.00772054 -- unscaled feasibility: 0.924261 -- constraints: 0 -- unscaled constraints: 0-- full objective: 7.36444
+Iteration 2 -- objective cost: 51.1659 -- feasibility: 0.00752806 -- unscaled feasibility: 0.901219 -- constraints: 0.00105791 -- unscaled constraints: 0.00349021-- full objective: 5.73479
+Iteration 3 -- objective cost: 39.4005 -- feasibility: 0.00901857 -- unscaled feasibility: 1.07965 -- constraints: 0 -- unscaled constraints: 0-- full objective: 4.42297
+Iteration 4 -- objective cost: 30.7248 -- feasibility: 0.0101608 -- unscaled feasibility: 1.21639 -- constraints: 0 -- unscaled constraints: 0-- full objective: 3.45731
+Iteration 5 -- objective cost: 24.3674 -- feasibility: 0.011136 -- unscaled feasibility: 1.33314 -- constraints: 0 -- unscaled constraints: 0-- full objective: 2.7511
+Iteration 6 -- objective cost: 19.6826 -- feasibility: 0.0119637 -- unscaled feasibility: 1.43223 -- constraints: 0 -- unscaled constraints: 0-- full objective: 2.23187
+Iteration 7 -- objective cost: 16.1729 -- feasibility: 0.0126275 -- unscaled feasibility: 1.5117 -- constraints: 0 -- unscaled constraints: 0-- full objective: 1.84389
+Iteration 8 -- objective cost: 13.4918 -- feasibility: 0.0131873 -- unscaled feasibility: 1.57872 -- constraints: 0 -- unscaled constraints: 0-- full objective: 1.54835
+Iteration 9 -- objective cost: 11.3818 -- feasibility: 0.0137052 -- unscaled feasibility: 1.64071 -- constraints: 0 -- unscaled constraints: 0-- full objective: 1.31646
+Iteration 10 -- objective cost: 9.70937 -- feasibility: 0.0142491 -- unscaled feasibility: 1.70583 -- constraints: 0 -- unscaled constraints: 0-- full objective: 1.13323
+Iteration 11 -- objective cost: 8.36312 -- feasibility: 0.0147391 -- unscaled feasibility: 1.76448 -- constraints: 0 -- unscaled constraints: 0-- full objective: 0.986264
+Iteration 12 -- objective cost: 7.30007 -- feasibility: 0.0151267 -- unscaled feasibility: 1.81089 -- constraints: 0 -- unscaled constraints: 0-- full objective: 0.870726
+Iteration 13 -- objective cost: 6.42325 -- feasibility: 0.0154389 -- unscaled feasibility: 1.84826 -- constraints: 0 -- unscaled constraints: 0-- full objective: 0.775831
+Iteration 14 -- objective cost: 5.65789 -- feasibility: 0.0157234 -- unscaled feasibility: 1.88232 -- constraints: 0 -- unscaled constraints: 0-- full objective: 0.693255
+Iteration 15 -- objective cost: 4.78928 -- feasibility: 0.0159046 -- unscaled feasibility: 1.90401 -- constraints: 0.0314151 -- unscaled constraints: 0.103643-- full objective: 0.599254
+Iteration 16 -- objective cost: 3.72149 -- feasibility: 0.0163891 -- unscaled feasibility: 1.96201 -- constraints: 0.0440578 -- unscaled constraints: 0.145353-- full objective: 0.483826
+Iteration 17 -- objective cost: 4.18841 -- feasibility: 0.0167951 -- unscaled feasibility: 2.01062 -- constraints: 0.116195 -- unscaled constraints: 0.365089-- full objective: 0.542607
+Iteration 18 -- objective cost: 5.67956 -- feasibility: 0.0198082 -- unscaled feasibility: 2.37133 -- constraints: 0.148785 -- unscaled constraints: 0.283401-- full objective: 0.720157
+Iteration 19 -- objective cost: 4.27477 -- feasibility: 0.0177012 -- unscaled feasibility: 2.11909 -- constraints: 0.219047 -- unscaled constraints: 0.42897-- full objective: 0.555562
+Iteration 20 -- objective cost: 21.561 -- feasibility: 0.0178168 -- unscaled feasibility: 2.13293 -- constraints: 0.125646 -- unscaled constraints: 0.239325-- full objective: 2.49581
+Iteration 21 -- objective cost: 35.7203 -- feasibility: 0.0147225 -- unscaled feasibility: 1.76249 -- constraints: 0.699981 -- unscaled constraints: 1.29668-- full objective: 4.07478
+Iteration 22 -- objective cost: 42.3614 -- feasibility: 0.0153728 -- unscaled feasibility: 1.84035 -- constraints: 1.25621 -- unscaled constraints: 2.27884-- full objective: 4.81989
+Iteration 23 -- objective cost: 33.9327 -- feasibility: 0.0139158 -- unscaled feasibility: 1.66593 -- constraints: 0.830589 -- unscaled constraints: 1.36666-- full objective: 3.87797
+Iteration 24 -- objective cost: 25.4888 -- feasibility: 0.0139224 -- unscaled feasibility: 1.66672 -- constraints: 0.731695 -- unscaled constraints: 1.20394-- full objective: 2.9329
+Iteration 25 -- objective cost: 19.8709 -- feasibility: 0.0144677 -- unscaled feasibility: 1.732 -- constraints: 0.653144 -- unscaled constraints: 0.939246-- full objective: 2.30117
+Iteration 26 -- objective cost: 11.7658 -- feasibility: 0.014433 -- unscaled feasibility: 1.72784 -- constraints: 0.636157 -- unscaled constraints: 0.94942-- full objective: 1.39209
+Iteration 27 -- objective cost: 57.5475 -- feasibility: 0.0187295 -- unscaled feasibility: 2.24219 -- constraints: 0.524539 -- unscaled constraints: 0.7321-- full objective: 6.52817
+Iteration 28 -- objective cost: 106.147 -- feasibility: 0.0137631 -- unscaled feasibility: 1.64765 -- constraints: 2.89655 -- unscaled constraints: 3.92099-- full objective: 12.0278
+Iteration 29 -- objective cost: 33.7818 -- feasibility: 0.0103449 -- unscaled feasibility: 1.23844 -- constraints: 3.64685 -- unscaled constraints: 4.93666-- full objective: 4.02242
+Iteration 30 -- objective cost: 105.533 -- feasibility: 0.0113362 -- unscaled feasibility: 1.35711 -- constraints: 1.90334 -- unscaled constraints: 2.57652-- full objective: 11.9049
+Iteration 31 -- objective cost: 11.9547 -- feasibility: 0.0102933 -- unscaled feasibility: 1.23226 -- constraints: 3.95567 -- unscaled constraints: 4.85688-- full objective: 1.63861
+Iteration 32 -- objective cost: 68.0586 -- feasibility: 0.0161567 -- unscaled feasibility: 1.93419 -- constraints: 0.758473 -- unscaled constraints: 0.844692-- full objective: 7.69764
+Iteration 33 -- objective cost: 8.48053 -- feasibility: 0.0152951 -- unscaled feasibility: 1.83105 -- constraints: 4.25609 -- unscaled constraints: 5.22574-- full objective: 1.22313
+Iteration 34 -- objective cost: 8.60755 -- feasibility: 0.0188124 -- unscaled feasibility: 2.25211 -- constraints: 0.498774 -- unscaled constraints: 0.669522-- full objective: 1.08272
+Iteration 35 -- objective cost: 10.9784 -- feasibility: 0.0169626 -- unscaled feasibility: 2.03067 -- constraints: 0.465025 -- unscaled constraints: 0.923408-- full objective: 1.35109
+Iteration 36 -- objective cost: 14.1742 -- feasibility: 0.0165003 -- unscaled feasibility: 1.97533 -- constraints: 0.546261 -- unscaled constraints: 0.948976-- full objective: 1.7078
+Iteration 37 -- objective cost: 15.7929 -- feasibility: 0.0159205 -- unscaled feasibility: 1.90592 -- constraints: 0.913573 -- unscaled constraints: 1.23668-- full objective: 1.90187
+Iteration 38 -- objective cost: 34.7586 -- feasibility: 0.0154149 -- unscaled feasibility: 1.84538 -- constraints: 0.521861 -- unscaled constraints: 0.745199-- full objective: 4.00173
+Iteration 39 -- objective cost: 52.0098 -- feasibility: 0.0152613 -- unscaled feasibility: 1.827 -- constraints: 1.95912 -- unscaled constraints: 1.79499-- full objective: 5.97041
+Iteration 40 -- objective cost: 23.0883 -- feasibility: 0.0148304 -- unscaled feasibility: 1.77541 -- constraints: 1.7421 -- unscaled constraints: 1.84774-- full objective: 2.74968
+Iteration 41 -- objective cost: 100.544 -- feasibility: 0.0144887 -- unscaled feasibility: 1.73451 -- constraints: 0.873702 -- unscaled constraints: 1.02167-- full objective: 11.3514
+Iteration 42 -- objective cost: 14.4267 -- feasibility: 0.0134238 -- unscaled feasibility: 1.60702 -- constraints: 3.24342 -- unscaled constraints: 2.3284-- full objective: 1.82913
+Iteration 43 -- objective cost: 154.555 -- feasibility: 0.0141311 -- unscaled feasibility: 1.6917 -- constraints: 1.01447 -- unscaled constraints: 1.12979-- full objective: 17.3888
+Iteration 44 -- objective cost: 97.1765 -- feasibility: 0.0115678 -- unscaled feasibility: 1.38483 -- constraints: 1.74823 -- unscaled constraints: 1.45285-- full objective: 10.9955
+Iteration 45 -- objective cost: 88.5647 -- feasibility: 0.0211901 -- unscaled feasibility: 2.53676 -- constraints: 4.52521 -- unscaled constraints: 3.41468-- full objective: 11.3304
+Iteration 46 -- objective cost: 115.748 -- feasibility: 0.0148366 -- unscaled feasibility: 1.77616 -- constraints: 2.7904 -- unscaled constraints: 1.81695-- full objective: 13.1603
+Iteration 47 -- objective cost: 289.22 -- feasibility: 0.0118777 -- unscaled feasibility: 1.42193 -- constraints: 3.92415 -- unscaled constraints: 2.68294-- full objective: 33.0113
+Iteration 48 -- objective cost: 125.969 -- feasibility: 0.0144038 -- unscaled feasibility: 1.72434 -- constraints: 7.97569 -- unscaled constraints: 4.79932-- full objective: 15.8625
+Iteration 49 -- objective cost: 34.6301 -- feasibility: 0.0154769 -- unscaled feasibility: 1.85281 -- constraints: 4.30955 -- unscaled constraints: 2.42404-- full objective: 4.45065
+Iteration 50 -- objective cost: 53.4122 -- feasibility: 0.0174447 -- unscaled feasibility: 2.08839 -- constraints: 6.3349 -- unscaled constraints: 3.39358-- full objective: 7.05986
+Iteration 51 -- objective cost: 103.18 -- feasibility: 0.0176423 -- unscaled feasibility: 2.11204 -- constraints: 2.65819 -- unscaled constraints: 1.67022-- full objective: 11.8421
+Iteration 52 -- objective cost: 206.102 -- feasibility: 0.0143486 -- unscaled feasibility: 1.71773 -- constraints: 2.41252 -- unscaled constraints: 1.18243-- full objective: 23.3726
+Iteration 53 -- objective cost: 167.089 -- feasibility: 0.0130452 -- unscaled feasibility: 1.5617 -- constraints: 4.96113 -- unscaled constraints: 2.65766-- full objective: 19.3458
+Iteration 54 -- objective cost: 125.524 -- feasibility: 0.0126943 -- unscaled feasibility: 1.5197 -- constraints: 1.13394 -- unscaled constraints: 0.578522-- full objective: 14.165
+Iteration 55 -- objective cost: 266.28 -- feasibility: 0.0116962 -- unscaled feasibility: 1.4002 -- constraints: 4.02202 -- unscaled constraints: 1.95427-- full objective: 30.2052
+Iteration 56 -- objective cost: 130.591 -- feasibility: 0.0115552 -- unscaled feasibility: 1.38332 -- constraints: 5.75056 -- unscaled constraints: 4.1385-- full objective: 16.2055
+Iteration 57 -- objective cost: 44.964 -- feasibility: 0.0117803 -- unscaled feasibility: 1.41027 -- constraints: 6.776 -- unscaled constraints: 3.45703-- full objective: 7.02386
+Iteration 58 -- objective cost: 637.715 -- feasibility: 0.0113187 -- unscaled feasibility: 1.35501 -- constraints: 6.19995 -- unscaled constraints: 3.48736-- full objective: 72.5459
+Iteration 59 -- objective cost: 147.907 -- feasibility: 0.00944773 -- unscaled feasibility: 1.13103 -- constraints: 30.3847 -- unscaled constraints: 13.3911-- full objective: 52.0055
+Iteration 60 -- objective cost: 161.047 -- feasibility: 0.0147655 -- unscaled feasibility: 1.76764 -- constraints: 7.03435 -- unscaled constraints: 2.81195-- full objective: 19.7689
+Iteration 61 -- objective cost: 118.417 -- feasibility: 0.0121946 -- unscaled feasibility: 1.45987 -- constraints: 1.87921 -- unscaled constraints: 1.24218-- full objective: 13.5527
+Iteration 62 -- objective cost: 170.289 -- feasibility: 0.0143051 -- unscaled feasibility: 1.71253 -- constraints: 4.76146 -- unscaled constraints: 2.60061-- full objective: 19.8959
+Iteration 63 -- objective cost: 179.052 -- feasibility: 0.0124506 -- unscaled feasibility: 1.49052 -- constraints: 17.0287 -- unscaled constraints: 5.50021-- full objective: 28.7961
+Iteration 64 -- objective cost: 67.7494 -- feasibility: 0.0166418 -- unscaled feasibility: 1.99227 -- constraints: 5.62797 -- unscaled constraints: 2.24975-- full objective: 9.75389
+Iteration 65 -- objective cost: 67.6382 -- feasibility: 0.0175495 -- unscaled feasibility: 2.10093 -- constraints: 2.56538 -- unscaled constraints: 1.40981-- full objective: 8.21083
+Iteration 66 -- objective cost: 441.18 -- feasibility: 0.0176375 -- unscaled feasibility: 2.11146 -- constraints: 1.57338 -- unscaled constraints: 0.68987-- full objective: 49.624
+Iteration 67 -- objective cost: 127.378 -- feasibility:

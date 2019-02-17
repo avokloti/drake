@@ -107,7 +107,7 @@ size_t EvaluateConstraint(const MathematicalProgram& prog,
   for (int i = 0; i < num_v_variables; ++i) {
     this_x(i) = xvec(prog.FindDecisionVariableIndex(variables(i)));
   }
-
+    //std::cout << "num constraints in ipopt solver: " << c.num_constraints() << std::endl; ADDED BY IT
   AutoDiffVecXd ty(c.num_constraints());
   c.Eval(math::initializeAutoDiff(this_x), &ty);
 
@@ -115,6 +115,9 @@ size_t EvaluateConstraint(const MathematicalProgram& prog,
   // constraint, we don't need to apply any bounding information here.
   for (int i = 0; i < c.num_constraints(); i++) {
     result[i] = ty(i).value();
+    //if (c.num_constraints() == 20) { ADDED BY IT
+    //    std::cout << result[i] << std::endl; ADDED BY IT
+    //} ADDED BY IT
   }
 
   // Extract the appropriate derivatives from our result into the

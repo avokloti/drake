@@ -73,6 +73,8 @@ namespace drake {
                 const std::unique_ptr<Context<double>> context_{nullptr};
                 const std::unique_ptr<ContinuousState<double>> continuous_state_{nullptr};
                 FixedInputPortValue* input_port_value_{nullptr};
+                
+                double timestep;
             };
             
             /// Implements the direct collocation constraints for a first-order hold on
