@@ -4,32 +4,24 @@
 
 #include <gflags/gflags.h>
 
+#include "drake/math/wrap_to.h"
 #include "drake/systems/framework/system.h"
 #include "drake/systems/framework/context.h"
-#include "drake/examples/quadrotor/quadrotor_plant.h"
-#include "drake/math/wrap_to.h"
 #include "drake/systems/analysis/simulator.h"
 #include "drake/systems/primitives/linear_system.h"
-#include "drake/systems/trajectory_optimization/admm_solver_scaled.h"
-#include "drake/systems/trajectory_optimization/admm_solver_al.h"
-#include "drake/systems/trajectory_optimization/admm_solver_al_ineq.h"
-#include "drake/systems/trajectory_optimization/admm_solver_weighted_v2.h"
+#include "drake/examples/quadrotor/quadrotor_plant.h"
 #include "drake/systems/primitives/trajectory_source.h"
+#include "drake/systems/trajectory_optimization/admm_solver_weighted_v2.h"
 #include "drake/systems/trajectory_optimization/midpoint_transcription.h"
 #include "drake/systems/trajectory_optimization/direct_collocation.h"
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
-
 
 namespace drake {
     namespace examples {
         namespace quadrotor {
             namespace {
                 typedef trajectories::PiecewisePolynomial<double> PiecewisePolynomialType;
-                
-                // prepare output file writer and control input for dynamics integration!
-                ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_sweep/";
                 
                 // system and context
                 QuadrotorPlant<double>* quadrotor = new QuadrotorPlant<double>();
@@ -40,23 +32,32 @@ namespace drake {
                 int num_inputs = quadrotor->get_input_port(0).size();
                 
                 // global obstacle parameters
-                double T = 5.0;
                 int N = 20;
-                double tolerance = 1e-6;
+                double T = 5.0;
+                double dt = T/N;
                 
-                int num_alpha = 10;
-                int num_obstacles = 2;
+                // initial and final states
+                Eigen::VectorXd x0(num_states);
+                Eigen::VectorXd xf(num_states);
                 
-                Eigen::VectorXd obstacle_center_x(num_obstacles);
-                Eigen::VectorXd obstacle_center_y(num_obstacles);
-                Eigen::VectorXd obstacle_radii_x(num_obstacles);
-                Eigen::VectorXd obstacle_radii_y(num_obstacles);
+                // matrices for running and final costs
+                Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_states, num_states);
+                Eigen::MatrixXd Qf = Eigen::MatrixXd::Zero(num_states, num_states);
+                Eigen::MatrixXd R = Eigen::MatrixXd::Identity(num_inputs, num_inputs) * 0.001;
                 
+                // upper and lower bounds
                 Eigen::VectorXd state_upper_bound(num_states);
                 Eigen::VectorXd state_lower_bound(num_states);
                 Eigen::VectorXd input_upper_bound(num_inputs);
                 Eigen::VectorXd input_lower_bound(num_inputs);
                 
+                // prepare output file writer and control input for dynamics integration!
+                ofstream output_file;
+                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_results/";
+                
+                //=============================================================================//
+                
+                /* WRITE OBSTACLES TO FILE
                 int writeObstaclesToFile(int trial) {
                     // write obstacles to file
                     ofstream output_obs;
@@ -71,7 +72,7 @@ namespace drake {
                     output_obs.close();
                     
                     return 0;
-                }
+                } */
                 
                 /* WRITE STATE TO FILE */
                 int writeStateToFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj) {
@@ -134,7 +135,7 @@ namespace drake {
                 }
                 
                 /* WRITE HEADER FILE */
-                int writeHeaderFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj_x, Eigen::Ref<Eigen::MatrixXd> traj_u, Eigen::Ref<Eigen::VectorXd> x0, Eigen::Ref<Eigen::VectorXd> xf, double rho1, double rho2, double rho3, int total_iterations, double time, std::string solve_result) {
+                int writeHeaderFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj_x, Eigen::Ref<Eigen::MatrixXd> traj_u, double rho1, double rho2, double rho3, int total_iterations, double time, double tolerance, std::string solve_result) {
                     
                     // open header file
                     std::string header_filename = output_folder + filename + "_header_" + std::to_string(trial) + ".txt";
@@ -145,7 +146,7 @@ namespace drake {
                     }
                     
                     // write output
-                    output_file << "Next lines: N, T, x0, xf, rho1, rho2, rho3, iterations, time, 2-norm feasibility error, inf-norm feasibility error, 2-norm constraint error, inf-norm constraint error, solve_result" << endl;
+                    output_file << "Next lines: N, T, x0, xf, rho1, rho2, rho3, iterations, time" << endl;
                     output_file << N << endl;
                     output_file << T << endl;
                     for (int ii = 0; ii < num_states; ii++) {
@@ -161,8 +162,6 @@ namespace drake {
                     output_file << rho3 << endl;
                     output_file << total_iterations << endl;
                     output_file << time << endl;
-                    
-                    double dt = T/N;
                     
                     // calculate integration error
                     Eigen::MatrixXd midpoint_error(num_states, N-1);
@@ -191,48 +190,48 @@ namespace drake {
                     output_file << error_vector.lpNorm<Infinity>() << endl;
                     
                     // calculate obstacle avoidance error, combined with state and input bound error
-                    Eigen::VectorXd obstacle_error = Eigen::VectorXd::Zero(N * num_obstacles);
+                    //Eigen::VectorXd obstacle_error = Eigen::VectorXd::Zero(N * num_obstacles);
                     Eigen::VectorXd bounds_error = Eigen::VectorXd::Zero(2 * N * (num_states + num_inputs));
                     
                     for (int i = 0; i < N; i++) {
                         // error from obstacles
+                        /*
                         for (int j = 0; j < num_obstacles; j++) {
                             obstacle_error[num_obstacles * i + j] = 1 - (obstacle_center_x[j] - traj_x(0, i)) * (obstacle_center_x[j] - traj_x(0, i))/(obstacle_radii_x[j] * obstacle_radii_x[j]) - (obstacle_center_y[j] - traj_x(1, i)) * (obstacle_center_y[j] - traj_x(1, i))/(obstacle_radii_y[j] * obstacle_radii_y[j]);
                             obstacle_error[num_obstacles * i + j] = std::max(obstacle_error[num_obstacles * i + j], 0.0);
                             if (obstacle_error[num_obstacles * i + j] > 0) {
-                                std::cout << "Collision of point " << i << " with obstacle " << j << ": " << obstacle_error[num_obstacles * i + j] << std::endl;
+                                std::cout << "Collision of point " << i << " with obstacle " << j << std::endl;
+                            }
+                        } */
+                            // error from state bounds
+                            for (int j = 0; j < num_states; j++) {
+                                int start_index = 2 * (i * num_states + j);
+                                bounds_error[start_index] = std::max(traj_x(j, i) - state_upper_bound[j], 0.0);
+                                bounds_error[start_index + 1] = std::max(state_lower_bound[j] - traj_x(j, i), 0.0);
+                                if (bounds_error[start_index] > tolerance) {
+                                    std::cout << "Point " << i << " at state " << j << " violates state upper bound, by: " << bounds_error[start_index] << std::endl;
+                                }
+                                if (bounds_error[start_index+1] > tolerance) {
+                                    std::cout << "Point " << i << " at state " << j << " violates state lower bound, by: " << bounds_error[start_index+1] << std::endl;
+                                }
+                            }
+                            for (int j = 0; j < num_inputs; j++) {
+                                int start_index = 2 * N * num_states + 2 * (i * num_inputs + j);
+                                bounds_error[start_index] = std::max(traj_u(j, i) - input_upper_bound[j], 0.0);
+                                bounds_error[start_index + 1] = std::max(input_lower_bound[j] - traj_u(j, i), 0.0);
+                                
+                                if (bounds_error[start_index] > tolerance) {
+                                    std::cout << "Point " << i << " at input " << j << " violates input upper bound, by: " << bounds_error[start_index] << std::endl;
+                                }
+                                if (bounds_error[start_index+1] > tolerance) {
+                                    std::cout << "Point " << i << " at input " << j << " violates input lower bound, by: " << bounds_error[start_index+1] << std::endl;
+                                }
                             }
                         }
-                        // error from state bounds
-                        for (int j = 0; j < num_states; j++) {
-                            int start_index = 2 * (i * num_states + j);
-                            bounds_error[start_index] = std::max(traj_x(j, i) - state_upper_bound[j], 0.0);
-                            bounds_error[start_index + 1] = std::max(state_lower_bound[j] - traj_x(j, i), 0.0);
-                            if (bounds_error[start_index] > 0) {
-                                std::cout << "Point " << i << " at state " << j << "violates state upper bound: " << traj_x(j, i) << std::endl;
-                            }
-                            if (bounds_error[start_index+1] > 0) {
-                                std::cout << "Point " << i << " at state " << j << "violates state lower bound: " << traj_x(j, i) << std::endl;
-                            }
-                        }
-                        for (int j = 0; j < num_inputs; j++) {
-                            int start_index = 2 * N * num_states + 2 * (i * num_inputs + j);
-                            bounds_error[start_index] = std::max(traj_u(j, i) - input_upper_bound[j], 0.0);
-                            bounds_error[start_index + 1] = std::max(input_lower_bound[j] - traj_u(j, i), 0.0);
-                            
-                            if (bounds_error[start_index] > 0) {
-                                std::cout << "Point " << i << " violates input upper bound" << std::endl;
-                            }
-                            if (bounds_error[start_index+1] > 0) {
-                                std::cout << "Point " << i << " violates input lower bound" << std::endl;
-                            }
-                        }
-                    }
                     
                     // calculate norms and write to file
-                    Eigen::VectorXd constraint_error(N * (num_obstacles + 2 * num_states + 2 * num_inputs)); constraint_error << obstacle_error, bounds_error;
-                    
-                    //std::cout << "Constraint error vector: " << constraint_error << std::endl;
+                    //Eigen::VectorXd constraint_error(N * (num_obstacles + 2 * num_states + 2 * num_inputs)); constraint_error << obstacle_error, bounds_error;
+                    Eigen::VectorXd constraint_error = bounds_error;
                     
                     // append to the end of the output file
                     output_file << constraint_error.lpNorm<2>() << endl;
@@ -241,9 +240,17 @@ namespace drake {
                     // write objective value to header file
                     double objective;
                     for (int i = 0; i < N; i++) {
-                        objective = objective + traj_u.col(i).transpose() * traj_u.col(i);
+                        objective = objective + traj_u.col(i).transpose() * R * traj_u.col(i);
                     }
+                    
+                    for (int i=0; i<N-1; i++) {
+                        objective = objective + (traj_x.col(i) - xf).transpose() * Q * (traj_x.col(i) - xf);
+                    }
+                    objective = objective + (traj_x.col(N) - xf).transpose() * Qf * (traj_x.col(N) - xf);
+                    objective = objective - xf.transpose() * Qf * xf - xf.transpose() * Q * xf;
                     output_file << objective << endl;
+                    
+                    // print solve result string to header
                     output_file << solve_result << endl;
                     
                     output_file.close();
@@ -251,7 +258,7 @@ namespace drake {
                 }
                 
                 
-                /* OBSTACLE CONSTRAINTS */
+                /* OBSTACLE CONSTRAINTS
                 void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
                     
                     for (int i = 0; i < num_obstacles; i++) {
@@ -262,10 +269,10 @@ namespace drake {
                         dg_x(i, 0) = -2 * (x[0] - obstacle_center_x[i])/(obstacle_radii_x[i] * obstacle_radii_x[i]);
                         dg_x(i, 1) = -2 * (x[1] - obstacle_center_y[i])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
                     }
-                }
+                } */
                 
                 
-                /* INTERPOLATED OBSTACLE CONSTRAINTS */
+                /* INTERPOLATED OBSTACLE CONSTRAINTS
                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
                     
                     //std::cout << "In interpolated obs con" << std::endl;
@@ -293,7 +300,7 @@ namespace drake {
                             dg_x2(index, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
                         }
                     }
-                }
+                } */
                 
                 std::string solutionResultToString(solvers::SolutionResult result) {
                     std::string result_str;
@@ -319,14 +326,12 @@ namespace drake {
                     return result_str;
                 }
                 
-                solvers::SolutionResult solveOPT(solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, Eigen::Ref<Eigen::VectorXd> x0, Eigen::Ref<Eigen::VectorXd> xf, double rho1, double rho2, double rho3, int trial_index) {
-                    
-                    std::cout << "\n ------------------------- Solving problem " << trial_index << " with " << solver_name << " -------------------------" << std::endl;
+                solvers::SolutionResult solveOPT(solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, double rho1, double rho2, double rho3) {
+
+                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": rho0 = " << rho1 << ", rho1 = " << rho2 << ", rho3 = " << rho3 << "!\n" << std::endl;
                     
                     systems::trajectory_optimization::MidpointTranscription traj_opt(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     
-                    traj_opt.AddLinearConstraint(traj_opt.initial_state() == x0);
-                    traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     traj_opt.AddEqualTimeIntervalsConstraints();
                     
                     auto x = traj_opt.state();
@@ -337,45 +342,45 @@ namespace drake {
                     traj_opt.AddConstraintToAllKnotPoints(u >= input_lower_bound);
                     traj_opt.AddConstraintToAllKnotPoints(u <= input_upper_bound);
                     
-                    const Eigen::Matrix4d R = Eigen::MatrixXd::Identity(4, 4);
-                    traj_opt.AddRunningCost(u.dot(R * u));
+                    traj_opt.AddLinearConstraint(traj_opt.initial_state() == x0);
+                    traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
+                    
+                    traj_opt.AddRunningCost(u.dot(R * u) + (x - xf).dot(Q * (x - xf)));
+                    traj_opt.AddFinalCost((x - xf).dot(Qf * (x - xf)));
                     
                     const double timespan_init = T;
                     
                     // initialize trajectory
                     auto traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, x0});
+                    if (problem_type == "simple_warm_start" || problem_type == "obstacles_warm_start") {
+                        traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, xf});
+                    }
                     traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
-                    // set solver options for ipopt
+                    // set solver options
                     if (solver_name == "ipopt") {
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-3);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-3);
-                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance * tolerance);
-                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance * tolerance);
+                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance);
+                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "print_level", 1);
-                        const std::string print_file = output_folder + "ipopt_output_" + std::to_string(trial_index) + ".txt";
+                        const std::string print_file = output_folder + "ipopt_output_" + std::to_string(trial) + ".txt";
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "file_print_level", 4);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "output_file", print_file);
                     } else if (solver_name == "snopt") {
-                        // set solver options for snopt
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-3);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", std::sqrt(tolerance));
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", std::sqrt(1e-3));
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
-                        const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial_index) + ".out";
-                        cout << "Should be printing to " << print_file << endl;
+                        const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial) + ".out";
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
-                    }
-                    
-                    // add obstacle constraints!
-                    for (int i = 0; i < num_obstacles; i++) {
-                        traj_opt.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i))/(obstacle_radii_x(i) * obstacle_radii_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i))/(obstacle_radii_y(i) * obstacle_radii_y(i)) >= 1);
                     }
                     
                     // solve!
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
                     solvers::SolutionResult result = solver->Solve(traj_opt);
                     std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
+                    
                     std::chrono::duration<double> elapsed_time = (end_time - start_time);
                     std::cout << "Finished! Runtime = " << elapsed_time.count() << " sec. \n";
                     std::cout << "Solution result:" << result << "\n";
@@ -385,19 +390,18 @@ namespace drake {
                     Eigen::MatrixXd utraj = traj_opt.getInputTrajectoryMatrix(num_inputs);
                     
                     // write output to files
-                    writeStateToFile(solver_name, trial_index, xtraj);
-                    writeInputToFile(solver_name, trial_index, utraj);
-                    writeHeaderFile(solver_name, trial_index, xtraj, utraj, x0, xf, rho1, rho2, rho3, -1, elapsed_time.count(), solutionResultToString(result));
+                    writeStateToFile(solver_name, trial, xtraj);
+                    writeInputToFile(solver_name, trial, utraj);
+                    writeHeaderFile(solver_name, trial, xtraj, utraj, rho1, rho2, rho3, -1, elapsed_time.count(), tolerance, solutionResultToString(result));
                     return result;
+                    
+                    // TODO: get number of iterations from SNOPT/IPOPT
                 }
                 
-                
                 /* SOLVE ADMM WITH OBSTACLES */
-                void solveADMM(systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, Eigen::Ref<Eigen::VectorXd> x0, Eigen::Ref<Eigen::VectorXd> xf, double rho1, double rho2, double rho3, int trial_index) {
+                Eigen::MatrixXd solveADMM(systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, double rho1, double rho2, double rho3) {
                     
-                    std::cout << "\n ------------------------- Solving problem " << trial_index << " with " << solver_name << " -------------------------" << std::endl;
-                    
-                    std::cout << "rhos: " << rho1 << ", " << rho2 << ", " << rho3 << std::endl;
+                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": rho0 = " << rho1 << ", rho1 = " << rho2 << ", rho3 = " << rho3 << "!\n" << std::endl;
                     
                     // initialize to a line between x0 and xf
                     Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
@@ -409,19 +413,24 @@ namespace drake {
                     solver->setConstraintTolerance(tolerance);
                     solver->setObjectiveTolerance(0.1);
                     solver->setStartAndEndState(x0, xf);
-                    solver->setMaxIterations(2000);
                     
-                    // rhos
+                    // set RHOS
                     solver->setRho1(rho1);
                     solver->setRho2(rho2);
                     solver->setRho3(rho3);
                     
-                    // output files
-                    solver->setOutputFile(output_folder + solver_name + "_output_" + std::to_string(trial_index) + ".txt");
-                    solver->setTrajFile(output_folder + solver_name + "_traj_" + std::to_string(trial_index) + ".txt");
-                    
                     // add obstacle constraints
-                    solver->addInequalityConstraintToAllKnotPoints(obstacleConstraints, num_obstacles, "obstacle constraints");
+                    //solver->addInequalityConstraintToAllKnotPoints(obstacleConstraints, num_obstacles, "obstacle constraints");
+                    
+                    // construct cost vectors
+                    Eigen::VectorXd temp_q = -Q.transpose() * xf - Q * xf;
+                    Eigen::VectorXd temp_qf = -Qf.transpose() * xf - Qf * xf;
+                    Eigen::VectorXd temp_r = Eigen::VectorXd::Zero((num_states + num_inputs) * N);
+                    
+                    // add costs
+                    solver->addQuadraticRunningCostOnState(Q, temp_q);
+                    solver->addQuadraticFinalCostOnState(Qf, temp_qf);
+                    solver->addQuadraticRunningCostOnInput(R, temp_r);
                     
                     // set state and input bounds
                     solver->setStateUpperBound(state_upper_bound);
@@ -429,7 +438,10 @@ namespace drake {
                     solver->setInputLowerBound(input_lower_bound);
                     solver->setInputUpperBound(input_upper_bound);
                     
-                    // start timer
+                    // output file
+                    solver->setOutputFile(output_folder + solver_name + "_output_" + std::to_string(trial) + ".txt");
+                    solver->setTrajFile(output_folder + solver_name + "_traj_" + std::to_string(trial) + ".txt");
+                    
                     std::string solve_result;
                     Eigen::MatrixXd xtraj;
                     Eigen::MatrixXd utraj;
@@ -442,7 +454,7 @@ namespace drake {
                         utraj = solver->getSolutionInputTrajectory();
                         total_iterations = solver->getNumLatestIterations();
                     } catch (std::exception e) {
-                        solve_result = "DIVERGENCE";
+                        solve_result = "ExceptionThrown";
                         xtraj = Eigen::MatrixXd::Zero(num_states, N);
                         utraj = Eigen::MatrixXd::Zero(num_inputs, N);
                         total_iterations = 0;
@@ -452,104 +464,60 @@ namespace drake {
                     cout << "Finished! Runtime = " << elapsed_time.count() << " sec." << std::endl;
                     cout << "Solve result = " << solve_result << std::endl;
                     
-                    // get xtraj and utraj
-                    //Eigen::MatrixXd xtraj = solver->getSolutionStateTrajectory();
-                    //Eigen::MatrixXd utraj = solver->getSolutionInputTrajectory();
-                    //int total_iterations = solver->getNumLatestIterations();
-                    //Eigen::MatrixXd xtraj = Eigen::MatrixXd::Zero(num_states, N);
-                    //Eigen::MatrixXd utraj = Eigen::MatrixXd::Zero(num_inputs, N);
-                    //int total_iterations = 0;
-                    
-                    // write info to files
-                    writeStateToFile(solver_name, trial_index, xtraj);
-                    writeInputToFile(solver_name, trial_index, utraj);
-                    writeHeaderFile(solver_name, trial_index, xtraj, utraj, x0, xf, rho1, rho2, rho3, total_iterations, elapsed_time.count(), solve_result);
+                    // write data to files
+                    writeStateToFile(solver_name, trial, xtraj);
+                    writeInputToFile(solver_name, trial, utraj);
+                    writeHeaderFile(solver_name, trial, xtraj, utraj, rho1, rho2, rho3, total_iterations, elapsed_time.count(), tolerance, solve_result);
+                    return xtraj;
                 }
                 
                 
                 int do_main(int argc, char* argv[]) {
-                    
+                    // state and input bounds
                     state_upper_bound << 20, 20, 20, 20, 0.2, 20, 20, 20, 20, 20, 20, 20;
                     state_lower_bound << -20, -20, -20, -20, -0.2, -20, -20, -20, -20, -20, -20, -20;
                     input_upper_bound << 10, 10, 10, 10;
                     input_lower_bound << 0, 0, 0, 0;
                     
-                    int num_trials = 5;
+                    // start and end states
+                    x0 = Eigen::VectorXd::Zero(num_states);
+                    xf = Eigen::VectorXd::Zero(num_states);
                     
-                    std::vector<double> rho1s {1, 10, 25, 50, 75, 100, 250, 500, 750, 1000};
-                    std::vector<double> rho2s {10, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000};
-                    std::vector<double> rho3s {10, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000};
-                    
-                    // make random generators for start/end points
-                    /*
+                    // define random value generators for start and end points
                     std::default_random_engine generator;
-                    std::uniform_real_distribution<double> x0_position_distribution(-6.0, -4.0);
-                    std::uniform_real_distribution<double> x0_velocity_distribution(-0.2, 0.2);
-                    std::uniform_real_distribution<double> xf_position_distribution(4.0, 6.0);
-                    std::uniform_real_distribution<double> xf_velocity_distribution(-0.2, 0.2);
+                    std::uniform_real_distribution<double> unif_dist(0, 1.0);
                     
-                    // make random generators for obstacles
-                    std::uniform_real_distribution<double> x_distribution(-3.0, 3.0);
-                    std::uniform_real_distribution<double> y_distribution(-3.0, 3.0);
-                    std::uniform_real_distribution<double> radii_x_distribution(0.4, 1.0);
-                    std::uniform_real_distribution<double> radii_y_distribution(0.4, 1.0);
+                    // set rho parameters
+                    double rho1 = 1;
+                    double rho2 = 2000;
+                    double rho3 = 2000;
                     
-                    // arrays for all randomized values
-                    Eigen::VectorXd x0 = Eigen::VectorXd::Zero(num_states);
-                    Eigen::VectorXd xf = Eigen::VectorXd::Zero(num_states);
-                    obstacle_center_x = Eigen::VectorXd::Zero(num_obstacles);
-                    obstacle_center_y = Eigen::VectorXd::Zero(num_obstacles);
-                    obstacle_radii_x = Eigen::VectorXd::Zero(num_obstacles);
-                    obstacle_radii_y = Eigen::VectorXd::Zero(num_obstacles); */
+                    // number of randomized trials
+                    int num_trials = 10;
                     
-                    Eigen::VectorXd x0 = (Eigen::VectorXd(12) << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                    Eigen::VectorXd xf = (Eigen::VectorXd(12) << 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0).finished();
-                    
-                    obstacle_center_x << 3, 4;
-                    obstacle_center_y << 3, 4;
-                    obstacle_radii_x << 0.5, 0.7;
-                    obstacle_radii_y << 0.5, 0.7;
-                    
-                    for (int index = 0; index < 10; index++) {//int(rho1s.size() * rho2s.size() * rho3s.size()); index++) {
-                        double rho3 = rho3s[index % int(rho3s.size())];
-                        double rho2 = rho2s[(index/int(rho3s.size())) % int(rho2s.size())];
-                        double rho1 = rho1s[(index/(int(rho3s.size()) * int(rho2s.size()))) % int(rho1s.size())];
+                    // solve
+                    for (int index = 0; index < num_trials; index++) {
                         
-                        // randomly sample start and end position within boxes
-                        /*
-                        for (int ns = 0; ns < 3; ns++) {
-                            x0[ns] = x0_position_distribution(generator);
-                            x0[ns + 6] = x0_velocity_distribution(generator);
-                            xf[ns] = xf_position_distribution(generator);
-                            xf[ns + 6] = xf_velocity_distribution(generator);
+                        // fill in random x0 and xf within state bounds
+                        for (int ns = 0; ns < num_states/2; ns++) {
+                            x0[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
+                            xf[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
                         }
                         
-                        // randomly sample several obstacles (make sure to avoid start/end)
+                        // make solvers
+                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(quadrotor);
+                        solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();
+                        solvers::MathematicalProgramSolverInterface* solver_snopt = new solvers::SnoptSolver();
                         
-                        for (int ns = 0; ns < num_obstacles; ns++) {
-                            obstacle_center_x[ns] = x_distribution(generator);
-                            obstacle_center_y[ns] = y_distribution(generator);
-                            obstacle_radii_x[ns] = radii_x_distribution(generator);
-                            obstacle_radii_y[ns] = radii_y_distribution(generator);
-                        } */
+                        // solve! (printing to file occurs in here)
+                        solveADMM(solver_admm, "admm", 1e-6, index, "simple", rho1, rho2, rho3);
+                        solveOPT(solver_ipopt, "ipopt", 1e-6, index, "simple", rho1, rho2, rho3);
+                        solveOPT(solver_snopt, "snopt", 1e-6, index, "simple", rho1, rho2, rho3);
                         
-                        // initialize solvers
-                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* admm_scaled = new systems::trajectory_optimization::admm_solver::AdmmSolverScaled(quadrotor);
-                        
-                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* admm_w = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(quadrotor);
-                        
-                        // solve problem with all solvers
-                        //solveADMM(admm_scaled, "admm_sc", x0, xf, rho1, rho2, rho3, index);
-                        solveADMM(admm_w, "admm_w", x0, xf, rho1, rho2, rho3, index);
-                        
-                        //writeObstaclesToFile(index);
-                        
-                        delete admm_scaled;
-                        
-                        // ok, don't do scaling
-                        // do paramater sweep over rho's
-                        // for each combination, repeat five times and report means/sds
-                        //
+                        // delete solver
+                        delete solver_admm;
+                        delete solver_ipopt;
+                        delete solver_snopt;
                     }
                     
                     return 0;
@@ -563,3 +531,79 @@ int main(int argc, char* argv[]) {
     return drake::examples::quadrotor::do_main(argc, argv);
 }
 
+
+
+
+
+/*
+ solvers::SolutionResult solveOPT(solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, Eigen::Ref<Eigen::VectorXd> x0, Eigen::Ref<Eigen::VectorXd> xf, int N, double tolerance, int trial_index) {
+ 
+ std::cout << "\n ------------------------- Solving problem " << trial_index << " with " << solver_name << " -------------------------" << std::endl;
+ 
+ systems::trajectory_optimization::MidpointTranscription traj_opt(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
+ 
+ traj_opt.AddLinearConstraint(traj_opt.initial_state() == x0);
+ traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
+ traj_opt.AddEqualTimeIntervalsConstraints();
+ 
+ auto x = traj_opt.state();
+ auto u = traj_opt.input();
+ 
+ traj_opt.AddConstraintToAllKnotPoints(x <= state_upper_bound);
+ traj_opt.AddConstraintToAllKnotPoints(x >= state_lower_bound);
+ traj_opt.AddConstraintToAllKnotPoints(u >= input_lower_bound);
+ traj_opt.AddConstraintToAllKnotPoints(u <= input_upper_bound);
+ 
+ const Eigen::Matrix4d R = Eigen::MatrixXd::Identity(4, 4);
+ traj_opt.AddRunningCost(u.dot(R * u));
+ 
+ const double timespan_init = T;
+ 
+ // initialize trajectory
+ auto traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, x0});
+ traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
+ 
+ // set solver options for ipopt
+ if (solver_name == "ipopt") {
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-3);
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-3);
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance);
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance);
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "print_level", 1);
+ const std::string print_file = output_folder + "ipopt_output_" + std::to_string(trial_index) + ".txt";
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "file_print_level", 4);
+ traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "output_file", print_file);
+ } else if (solver_name == "snopt") {
+ // set solver options for snopt
+ traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
+ traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", std::sqrt(tolerance));
+ traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", std::sqrt(1e-3));
+ traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
+ const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial_index) + ".out";
+ cout << "Should be printing to " << print_file << endl;
+ traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
+ }
+ 
+ // add obstacle constraints!
+ for (int i = 0; i < num_obstacles; i++) {
+ traj_opt.AddConstraintToAllKnotPoints((x(0) - obstacle_center_x(i)) * (x(0) - obstacle_center_x(i))/(obstacle_radii_x(i) * obstacle_radii_x(i)) + (x(1) - obstacle_center_y(i)) * (x(1) - obstacle_center_y(i))/(obstacle_radii_y(i) * obstacle_radii_y(i)) >= 1);
+ }
+ 
+ // solve!
+ std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
+ solvers::SolutionResult result = solver->Solve(traj_opt);
+ std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
+ std::chrono::duration<double> elapsed_time = (end_time - start_time);
+ std::cout << "Finished! Runtime = " << elapsed_time.count() << " sec. \n";
+ std::cout << "Solution result:" << result << "\n";
+ 
+ // get output
+ Eigen::MatrixXd xtraj = traj_opt.getStateTrajectoryMatrix(num_states);
+ Eigen::MatrixXd utraj = traj_opt.getInputTrajectoryMatrix(num_inputs);
+ 
+ // write output to files
+ writeStateToFile(solver_name, trial_index, xtraj, N);
+ writeInputToFile(solver_name, trial_index, utraj, N);
+ writeHeaderFile(solver_name, trial_index, xtraj, utraj, x0, xf, N, tolerance, elapsed_time.count(), solutionResultToString(result));
+ return result;
+ } */

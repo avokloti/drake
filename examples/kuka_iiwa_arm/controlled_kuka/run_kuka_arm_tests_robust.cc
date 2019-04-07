@@ -58,7 +58,7 @@ typedef drake::trajectories::PiecewisePolynomial<double> PiecewisePolynomialType
 #define SHAPED_COST 0
 #define WARM_START_LINEAR 0
 #define WARM_START_IPOPT 0
-#define WARM_START_ADMM 1
+#define WARM_START_ADMM 0
 #define RANDOM_START 0
 
 namespace drake {
@@ -76,15 +76,18 @@ namespace drake {
                 double pi = 3.14159;
                 
                 // initial and final states
-                const Eigen::VectorXd x0 = (Eigen::VectorXd(14) << 0, -0.683, 0, 1.77, 0, 0.88, -1.57, 0, 0, 0, 0, 0, 0, 0).finished();
+                //const Eigen::VectorXd x0 = (Eigen::VectorXd(14) << 0, -0.683, 0, 1.77, 0, 0.88, -1.57, 0, 0, 0, 0, 0, 0, 0).finished();
                 //const Eigen::VectorXd xf = (Eigen::VectorXd(14) << 0, -0.683, 0, 1.77, 0, 0.88, -1.5, 0, 0, 0, 0, 0, 0, 0).finished();
-                const Eigen::VectorXd xf = (Eigen::VectorXd(14) << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0).finished();
+                //const Eigen::VectorXd xf = (Eigen::VectorXd(14) << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0).finished();
+                
+                Eigen::VectorXd x0(14);
+                Eigen::VectorXd xf(14);
                 
                 int num_states = 14;
                 int num_inputs = 7;
                 
                 // define time and number of points
-                int N = 20;
+                int N = 60;
                 double T = 4.0;
                 double dt = T/N;
                 
@@ -107,7 +110,7 @@ namespace drake {
                 
                 // for writing files
                 std::ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/basic40/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/random_start_end_v3/";
                 
                 std::unique_ptr<systems::Context<double>> context_ptr;
                 
@@ -329,6 +332,9 @@ namespace drake {
                     auto u = traj_opt.input();
                     auto x = traj_opt.state();
                     
+                    std::cout << "x size? " << x.size() << std::endl;
+                    std::cout << "x(1)? " << x(1) << std::endl;
+                    
                     // add input limits to problem
                     traj_opt.AddConstraintToAllKnotPoints(u >= input_lower_bound);
                     traj_opt.AddConstraintToAllKnotPoints(u <= input_upper_bound);
@@ -347,21 +353,23 @@ namespace drake {
                     traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     
                     // initialize trajectory
+                    /*
                     auto traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, T}, {Eigen::VectorXd::Zero(num_states), Eigen::VectorXd::Zero(num_states)});
                     if (WARM_START_LINEAR) {
                         traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, T}, {x0, xf});
                     }
                     if (WARM_START_ADMM) {
                         traj_init_x = PiecewisePolynomial<double>::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), warm_start_traj);
-                    }
+                    } */
+                    auto traj_init_x = PiecewisePolynomial<double>::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), warm_start_traj);
                     traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set solver options for ipopt
                     if (solver_name == "ipopt") {
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-3);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-3);
-                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance * tolerance);
-                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance * tolerance);
+                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance);
+                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "print_level", 1);
                         const std::string print_file = output_folder + "ipopt_output_" + std::to_string(trial) + ".txt";
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "file_print_level", 4);
@@ -369,7 +377,7 @@ namespace drake {
                     } else if (solver_name == "snopt") {
                         // set solver options for snopt
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.01);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-3);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
                         const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial) + ".out";
@@ -399,8 +407,6 @@ namespace drake {
                     Map<VectorXd> xtraj_reshape(xtraj.data(), xtraj.size());
                     Map<VectorXd> utraj_reshape(utraj.data(), utraj.size());
                     opt_traj << xtraj_reshape, utraj_reshape;
-                    //std::cout << "ipopt traj size: " << ipopt_traj.size() << std::endl;
-                    //std::cout << ipopt_traj.transpose() << std::endl;
                     return opt_traj;
                 }
                 
@@ -408,9 +414,7 @@ namespace drake {
                     
                     std::cout << "\n=============== Solving problem " << problem_type << " with " << solver_name << "!\n" << std::endl;
                     
-                    // initialize to a line between x0 and xf
-                    Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
-                    
+                    /*
                     if (WARM_START_LINEAR) {
                         for (int i = 0; i < N; i++) {
                             for (int ii = 0; ii < num_states; ii++) {
@@ -437,13 +441,16 @@ namespace drake {
                         for (int i = N * num_states; i < N * num_states + N * num_inputs; i++) {
                             y[i] = u_dist(re);
                         }
-                    }
+                    } */
                     
                     // set tolerances
                     solver->setFeasibilityTolerance(tolerance);
+                    solver->setKnotPoints(N);
+                    solver->setStartAndEndState(x0, xf);
+                    solver->setTotalTime(T);
                     
                     if (solver_name == "admm") {
-                        solver->setRho1(0.1);
+                        solver->setRho1(1);
                         solver->setRho2(5000);
                         solver->setRho3(2000);
                     } else if (solver_name == "ali") {
@@ -471,6 +478,9 @@ namespace drake {
                     // output file
                     solver->setOutputFile(output_folder + solver_name + "_output_" + std::to_string(trial) + ".txt");
                     solver->setTrajFile(output_folder + solver_name + "_traj_" + std::to_string(trial) + ".txt");
+                    
+                    // initial trajectory
+                    Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
                     
                     // start timer
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
@@ -513,51 +523,43 @@ namespace drake {
                     num_states = plant->get_num_positions() + plant->get_num_velocities();
                     num_inputs = plant->get_num_actuators();
                     
-                    // check constants
-                    std::cout << "num bodies: " << plant->get_num_bodies() << std::endl;
-                    std::cout << "num positions: " << plant->get_num_positions() << std::endl;
-                    std::cout << "num actuators: " << plant->get_num_actuators() << std::endl;
-                    
                     // initialize costs and bounds
                     initializeValues();
                     
-                    // make solvers
-                    systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_pen = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(plant, x0, xf, T, N, 2500);
-                    systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_al_ineq = new systems::trajectory_optimization::admm_solver::AdmmSolverALIneq(plant, x0, xf, T, N, 2500);
+                    // define random value generators for start and end points
+                    std::default_random_engine generator;
+                    std::uniform_real_distribution<double> unif_dist(0, 1.0);
                     
-                    solvers::MathematicalProgramSolverInterface* ipopt_solver = new solvers::IpoptSolver();
-                    solvers::MathematicalProgramSolverInterface* snopt_solver = new solvers::SnoptSolver();
-                    
-                    // solve!
-                    
-                    if (WARM_START_ADMM) {
-                        // zero trajectory
-                        Eigen::VectorXd zero_traj = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                    for (int trial = 0; trial < 10; trial++) {
                         
-                        // solve with ADMM first
-                        Eigen::MatrixXd admm_sol = solveADMM(plant, solver_pen, "admm", 1e-6, 0, "simple", zero_traj);
+                        // make solvers
+                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(plant);
                         
-                        // warm start SNOPT and IPOPT
-                        //solveOPT(plant, ipopt_solver, "ipopt", 1e-6, 0, "simple", admm_sol);
-                        //solveOPT(plant, snopt_solver, "snopt", 1e-6, 0, "simple", admm_sol);
+                        solvers::MathematicalProgramSolverInterface* ipopt_solver = new solvers::IpoptSolver();
+                        solvers::MathematicalProgramSolverInterface* snopt_solver = new solvers::SnoptSolver();
                         
-                    } else if (WARM_START_IPOPT) {
-                        // zero trajectory
-                        Eigen::MatrixXd zero_traj = Eigen::MatrixXd::Zero(num_states, N);
+                        // fill in random x0 and xf within state bounds
+                        for (int ns = 0; ns < num_states; ns++) {
+                            x0[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
+                            xf[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
+                        }
                         
-                        // solve with IPOPT and SNOPT first
-                        Eigen::VectorXd ipopt_sol = solveOPT(plant, ipopt_solver, "ipopt", 1e-6, 0, "simple", zero_traj);
-                        Eigen::VectorXd snopt_sol = solveOPT(plant, snopt_solver, "snopt", 1e-6, 0, "simple", zero_traj);
+                        Eigen::VectorXd zero_traj_admm = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                        Eigen::MatrixXd zero_traj_opt = Eigen::MatrixXd::Zero(num_states, N);
                         
-                        // solve with ADMM
-                        solveADMM(plant, solver_pen, "admm", 1e-6, 0, "simple", ipopt_sol);
+                        std::cout << "Iteration " << trial << " x0 and xf are: " << std::endl;
+                        std::cout << x0 << std::endl;
+                        std::cout << xf << std::endl;
+                        
+                        // solve with all methods
+                        Eigen::MatrixXd admm_sol = solveADMM(plant, solver_admm, "admm", 1e-6, trial, "simple", zero_traj_admm);
+                        Eigen::VectorXd ipopt_sol = solveOPT(plant, ipopt_solver, "ipopt", 1e-6, trial, "simple", zero_traj_opt);
+                        Eigen::VectorXd snopt_sol = solveOPT(plant, snopt_solver, "snopt", 1e-6, trial, "simple", zero_traj_opt);
+                        
+                        delete solver_admm;
+                        delete snopt_solver;
+                        delete ipopt_solver;
                     }
-                    
-                    //delete solver_al;
-                    delete solver_al_ineq;
-                    delete solver_pen;
-                    delete snopt_solver;
-                    delete ipopt_solver;
                     
                     return 0;
                 }

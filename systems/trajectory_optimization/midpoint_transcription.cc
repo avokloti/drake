@@ -186,6 +186,21 @@ namespace drake {
                 }
             }
             
+            void MidpointTranscription::AddTaskSpaceObstacleConstraintToAllPoints(Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii_x, Eigen::Ref<Eigen::VectorXd> obstacle_radii_y, RigidBodyTree<double>& rbtree) {
+                
+                // Add the dynamic constraints.
+                auto constraint = std::make_shared<TaskSpaceObstacleConstraint>(num_states(), num_inputs(), obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, rbtree);
+                
+                DRAKE_ASSERT(static_cast<int>(constraint->num_constraints()) == obstacle_center_x.size());
+                
+                // For N-1 timesteps, add a constraint which depends on the knot
+                // value along with the state and input vectors at that knot and the
+                // next.
+                for (int i = 0; i < N() - 1; i++) {
+                    AddConstraint(constraint, {h_vars().segment<1>(i), x_vars().segment(i * num_states(), num_states())});
+                }
+            }
+            
             void MidpointTranscription::DoAddRunningCost(const symbolic::Expression& g) {
                 // Trapezoidal integration:
                 //    sum_{i=0...N-2} h_i/2.0 * (g_i + g_{i+1}), or
@@ -198,7 +213,7 @@ namespace drake {
                 //                                           g * (h_vars()(i - 1) + h_vars()(i)) / 2, i));
                 //}
                 //AddCost(SubstitutePlaceholderVariables(g * h_vars()(N() - 2) / 2, N() - 1));
-                for (int i = 0; i < N() - 1; i++) {
+                for (int i = 0; i < N(); i++) {
                     AddCost(SubstitutePlaceholderVariables(g * timestep, i));
                 }
                 // assumes minimum_timestep = maximum_timestep
@@ -341,6 +356,71 @@ namespace drake {
                 return prog->AddConstraint(constraint,
                                            {timestep, state, next_state, input, next_input});
             }
+            
+            
+            /* TASK SPACE OBSTACLE CONSTRAINT METHODS */
+            
+            // need a constructor
+            TaskSpaceObstacleConstraint::TaskSpaceObstacleConstraint(int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii_x, Eigen::Ref<Eigen::VectorXd> obstacle_radii_y, RigidBodyTree<double>& rbtree): Constraint(obstacle_radii_x.size(), 1 + num_states, -100000 * Eigen::VectorXd::Ones(obstacle_radii_x.size()), Eigen::VectorXd::Zero(obstacle_radii_x.size())) {
+                
+                num_states_ = num_states;
+                num_inputs_ = num_inputs;
+                obstacle_center_x_ = obstacle_center_x;
+                obstacle_center_y_ = obstacle_center_y;
+                obstacle_radii_x_ = obstacle_radii_x;
+                obstacle_radii_y_ = obstacle_radii_y;
+                rbtree_ = rbtree.Clone();
+            }
+            
+            void TaskSpaceObstacleConstraint::DoEval(const Eigen::Ref<const Eigen::VectorXd>& x, Eigen::VectorXd* y) const {
+                AutoDiffVecXd y_t;
+                Eval(math::initializeAutoDiff(x), &y_t);
+                *y = math::autoDiffToValueMatrix(y_t);
+            }
+            
+            // NEED TO RESOLVE KINEMATICS CACHE ISSUE
+            // TRY DOING IT A DIFFERENT WAY -- DO NOT AUTODIFF
+            // CHANGE ALL AUTODIFFING TO BEING PROVIDED THE GRADIENT MATRIX
+            
+            // The format of the input to the eval() function is the
+            // tuple { timestep, state 0, state 1, input 0, input 1 },
+            // which has a total length of 1 + 2*num_states + 2*num_inputs.
+            void TaskSpaceObstacleConstraint::DoEval(const Eigen::Ref<const AutoDiffVecXd>& x, AutoDiffVecXd* y) const {
+                /*
+                DRAKE_ASSERT(x.size() == 1 + num_states_);
+                
+                const AutoDiffXd h = x(0);
+                const Eigen::Matrix<Eigen::AutoDiffScalar<Eigen::VectorXd>, -1, 1, 0, -1, 1> s = x.segment(0, num_states_);
+                
+                // prepare for kinematics calculations
+                //Eigen::VectorXd q = s.segment(0, 7);
+                //Eigen::VectorXd v = s.segment(7, 7);
+                KinematicsCache<Eigen::AutoDiffScalar<Eigen::Matrix<double, -1, 1, 0, -1, 1> > > cache = rbtree_->doKinematics(s.segment(0, 7), s.segment(7, 7));
+                Eigen::Matrix<double, 3, -1> points = Eigen::Matrix<double, 3, -1>::Zero(3, 1);
+                
+                // calculate end-effector position and Jacobian
+                auto ee = rbtree_->transformPoints(cache, points, 6, 0);
+                
+                // place correctly in constraint matrix
+                for (int i = 0; i < num_obstacles_; i++) {
+                    (*y)(i) = 1 - (obstacle_center_x_[i] - ee(0)) * (obstacle_center_x_[i] - ee(0))/(obstacle_radii_x_[i] * obstacle_radii_x_[i]) - (obstacle_center_y_[i] - ee(1)) * (obstacle_center_y_[i] - ee(1))/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
+                } */
+            }
+            
+            void TaskSpaceObstacleConstraint::DoEval(const Eigen::Ref<const VectorX<symbolic::Variable>>&,
+                                                        VectorX<symbolic::Expression>*) const {
+                throw std::logic_error("MidpointTranscriptionConstraint does not support symbolic evaluation.");
+            }
+            
+            Binding<Constraint> AddTaskSpaceObstacleConstraint(std::shared_ptr<TaskSpaceObstacleConstraint> constraint,
+                                                               const Eigen::Ref<const VectorXDecisionVariable>& timestep,
+                                                               const Eigen::Ref<const VectorXDecisionVariable>& state,
+                                                               MathematicalProgram* prog) {
+                //DRAKE_DEMAND(timestep.size() == 1);
+                DRAKE_DEMAND(state.size() == constraint->num_states());
+                return prog->AddConstraint(constraint, {timestep, state});
+            }
+            
             
         }  // namespace trajectory_optimization
     }  // namespace systems

@@ -89,10 +89,10 @@ namespace drake {
                         b.segment(i * num_states, num_states) = costq;
                         b.segment(N * num_states + i * num_inputs, num_inputs) = costr;
                     }
-                    //R.block((N-1) * num_states, (N-1) * num_states, num_states, num_states) = R.block((N-1) * num_states, (N-1) * num_states, num_states, num_states) + costQf;
-                    //b.segment((N-1) * num_states, num_states) = b.segment((N-1) * num_states, num_states) + costqf;
-                    R.block((N-1) * num_states, (N-1) * num_states, num_states, num_states) = costQf;
-                    b.segment((N-1) * num_states, num_states) = costqf;
+                    R.block((N-1) * num_states, (N-1) * num_states, num_states, num_states) = R.block((N-1) * num_states, (N-1) * num_states, num_states, num_states) + costQf;
+                    b.segment((N-1) * num_states, num_states) = b.segment((N-1) * num_states, num_states) + costqf;
+                    //R.block((N-1) * num_states, (N-1) * num_states, num_states, num_states) = costQf;
+                    //b.segment((N-1) * num_states, num_states) = costqf;
                     
                     IOFormat CleanFmt(6, 0, ", ", "\n");
                     
@@ -423,7 +423,7 @@ namespace drake {
                         y = proximalUpdateConstraints(x, lambda, M, c, G, h, rho1, rho2, rho3);
                         //std::cout << "Change from objective update: " << (y - x).lpNorm<2>() << std::endl;
                         //std::cout << "Change from oprevious traj: " << (y - y_prev).lpNorm<2>() << std::endl;
-                        y_prev = y;
+                        //y_prev = y;
                         
                         admm_update2_time_end = std::chrono::system_clock::now(); // end timer
                         admm_update2_timer = admm_update2_timer + (duration_cast<duration<double>>(admm_update2_time_end - admm_update2_time_start)).count();
@@ -453,8 +453,8 @@ namespace drake {
                         }
                         
                         // print / compute info
-                        if (i % 5 == 0) {
-                            output_stream << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << "-- full objective: " << full_objective << "G norm: " << G.norm() << "\n";
+                        if (i % 1 == 0) {
+                            output_stream << "Iteration " << i << " -- objective cost: " << objective << " -- feasibility (inf-norm): " << feasibilityNorm << " -- constraint satisfaction (inf-norm): " << constraintNorm << " -- full objective: " << full_objective << " -- G norm: " << G.norm() << " -- rho0: " << rho1 << " -- rho1: " << rho2 << " -- rho2: " << rho3 << "\n";
                         }
                         
                         tripletsM.clear();
@@ -492,8 +492,11 @@ namespace drake {
                     traj_stream.close();
                     
                     // return
+                    num_latest_iterations = i;
                     if (i == max_iter) {
                         return "IterationLimit";
+                    } else if (isnan(objective)) {
+                        return "DivergenceToNaN";
                     } else {
                         return "SolutionFound";
                     }
