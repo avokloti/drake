@@ -1,0 +1,58 @@
+# -*- python -*-
+
+load(
+    "//tools:drake.bzl",
+    "drake_cc_binary",
+    "drake_cc_googletest",
+    "drake_cc_library",
+)
+load("//tools/install:install_data.bzl", "install_data")
+load("//tools/lint:lint.bzl", "add_lint_tests")
+load(
+    "@drake//tools/vector_gen:vector_gen.bzl",
+    "drake_cc_vector_gen_library",
+)
+
+drake_cc_vector_gen_library(
+    name = "robobee_vector_types",
+    srcs = [
+        "robobee_input.named_vector",
+        "robobee_params.named_vector",
+        "robobee_state.named_vector",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+drake_cc_library(
+    name = "robobee_plant",
+    srcs = ["robobee_plant.cc"],
+    hdrs = ["robobee_plant.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":robobee_vector_types",
+        "//common:default_scalars",
+        "//geometry:scene_graph",
+        "//math:geometric_transform",
+        "//systems/framework",
+    ],
+)
+
+drake_cc_binary(
+    name = "robobee_test",
+    srcs = ["robobee_test.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":robobee_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "@gflags",
+    ],
+)
+   
+
+install_data()
+
+add_lint_tests()

@@ -1,0 +1,74 @@
+namespace: "drake::examples::robobee"
+
+element {
+    name: "x"
+    doc: "Center of mass position (x-direction)."
+    doc_units: "mm?"
+    default_value: "0.0"
+}
+element {
+    name: "y"
+    doc: "Center of mass position (y-direction)."
+    doc_units: "mm?"
+    default_value: "0.0"
+}
+element {
+    name: "z"
+    doc: "Center of mass position (z-direction)."
+    doc_units: "mm?"
+    default_value: "0.0"
+}
+element {
+    name: "alpha"
+    doc: "Orientation, roll angle (according to Tait-Bryan convention)."
+    doc_units: "radians"
+    default_value: "0.0"
+}
+element {
+    name: "beta"
+    doc: "Orientation, pitch angle (according to Tait-Bryan convention)."
+    doc_units: "radians"
+    default_value: "0.0"
+}
+element {
+    name: "gamma"
+    doc: "Orientation, yaw angle (according to Tait-Bryan convention)."
+    doc_units: "radians"
+    default_value: "0.0"
+}
+element {
+    name: "x_dot"
+    doc: "Center of mass velocity (x-direction)."
+    doc_units: "mm/s?"
+    default_value: "0.0"
+}
+element {
+    name: "y_dot"
+    doc: "Center of mass velocity (y-direction)."
+    doc_units: "mm/s?"
+    default_value: "0.0"
+}
+element {
+    name: "z_dot"
+    doc: "Center of mass velocity (z-direction)."
+    doc_units: "mm/s?"
+    default_value: "0.0"
+}
+element {
+    name: "alpha_dot"
+    doc: "Angular velocity, roll angle (according to Tait-Bryan convention)."
+    doc_units: "radians/s"
+    default_value: "0.0"
+}
+element {
+    name: "beta_dot"
+    doc: "Angular velocity, pitch angle (according to Tait-Bryan convention)."
+    doc_units: "radians/s"
+    default_value: "0.0"
+}
+element {
+    name: "gamma_dot"
+    doc: "Angular velocity, yaw angle (according to Tait-Bryan convention)."
+    doc_units: "radians/s"
+    default_value: "0.0"
+}

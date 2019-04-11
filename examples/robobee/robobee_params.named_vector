@@ -1,0 +1,103 @@
+namespace: "drake::examples::robobee"
+
+element {
+    name: "g"
+    doc: "Gravity constant."
+    doc_units: "m/s^2"
+    default_value: "9.81"
+    min_value: "0.0"
+}
+element {
+    name: "m"
+    doc: "Mass of Robobee."
+    doc_units: "mg"
+    default_value: "87"
+    min_value: "0.0"
+}
+element {
+    name: "I_alpha"
+    doc: "Inertia around x-axis."
+    doc_units: "mg mm^2"
+    default_value: "2.45"
+    min_value: "0.0"
+}
+element {
+    name: "I_beta"
+    doc: "Inertia around y-axis."
+    doc_units: "mg mm^2"
+    default_value: "1.34"
+    min_value: "0.0"
+}
+element {
+    name: "I_gamma"
+    doc: "Inertia around z-axis."
+    doc_units: "mg mm^2"
+    default_value: "102.2"
+    min_value: "0.0"
+}
+element {
+    name: "r_cp"
+    doc: ""
+    doc_units: "mm"
+    default_value: "13.6"
+    min_value: "0.0"
+}
+element {
+    name: "rho"
+    doc: "ambient air density"
+    doc_units: "kg/m^3"
+    default_value: "1.225"
+    min_value: "0.0"
+}
+
+element {
+    name: "B"
+    doc: "wing geometry parameter"
+    doc_units: "unitless"
+    default_value: "2.1 * 0.000000001"
+    min_value: "0.0"
+}
+element {
+    name: "Cl"
+    doc: "lift coefficient"
+    doc_units: "?"
+    default_value: "1.87"
+    min_value: "0.0"
+}
+element {
+    name: "kappa"
+    doc: "split-cycle parameter (set to 1/2 to make tau_gamma = 0)"
+    doc_units: ""
+    default_value: "0.5"
+    min_value: "0.0"
+}
+element {
+    name: "A"
+    doc: "transfer function numerator coefficient"
+    doc_units: ""
+    default_value: "151.4"
+    min_value: "0.0"
+}
+element {
+    name: "m_eq"
+    doc: "transfer function characteristic polynomial coefficient"
+    doc_units: "mg"
+    default_value: "528"
+    min_value: "0.0"
+}
+element {
+    name: "b_eq"
+    doc: "transfer function characteristic polynomial coefficient"
+    doc_units: "Ns/m"
+    default_value: "0.228"
+    min_value: "0.0"
+}
+element {
+    name: "k_eq"
+    doc: "transfer function characteristic polynomial coefficient"
+    doc_units: "N/m"
+    default_value: "356"
+    min_value: "0.0"
+}
+
+
