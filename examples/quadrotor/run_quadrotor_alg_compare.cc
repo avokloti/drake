@@ -53,7 +53,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_results/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_results_1e4/";
                 
                 //=============================================================================//
                 
@@ -328,7 +328,7 @@ namespace drake {
                 
                 solvers::SolutionResult solveOPT(solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, double rho1, double rho2, double rho3) {
 
-                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": rho0 = " << rho1 << ", rho1 = " << rho2 << ", rho3 = " << rho3 << "!\n" << std::endl;
+                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << "!\n" << std::endl;
                     
                     systems::trajectory_optimization::MidpointTranscription traj_opt(quadrotor, *quadrotor_context_ptr, N, T/N, T/N);
                     
@@ -352,14 +352,14 @@ namespace drake {
                     
                     // initialize trajectory
                     auto traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, x0});
-                    if (problem_type == "simple_warm_start" || problem_type == "obstacles_warm_start") {
-                        traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, xf});
-                    }
+                    //if (problem_type == "simple_warm_start" || problem_type == "obstacles_warm_start") {
+                    //    traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, xf});
+                    //}
                     traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
                     
                     // set solver options
                     if (solver_name == "ipopt") {
-                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-3);
+                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-1);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-3);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance);
@@ -369,9 +369,10 @@ namespace drake {
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "output_file", print_file);
                     } else if (solver_name == "snopt") {
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", std::sqrt(tolerance));
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", std::sqrt(1e-3));
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.01);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-1);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 200000);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 10000);
                         const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial) + ".out";
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
                     }
@@ -493,7 +494,7 @@ namespace drake {
                     double rho3 = 2000;
                     
                     // number of randomized trials
-                    int num_trials = 10;
+                    int num_trials = 20;
                     
                     // solve
                     for (int index = 0; index < num_trials; index++) {
@@ -510,9 +511,9 @@ namespace drake {
                         solvers::MathematicalProgramSolverInterface* solver_snopt = new solvers::SnoptSolver();
                         
                         // solve! (printing to file occurs in here)
-                        solveADMM(solver_admm, "admm", 1e-6, index, "simple", rho1, rho2, rho3);
-                        solveOPT(solver_ipopt, "ipopt", 1e-6, index, "simple", rho1, rho2, rho3);
-                        solveOPT(solver_snopt, "snopt", 1e-6, index, "simple", rho1, rho2, rho3);
+                        solveADMM(solver_admm, "admm", 1e-3, index, "simple", rho1, rho2, rho3);
+                        solveOPT(solver_ipopt, "ipopt", 1e-3, index, "simple", rho1, rho2, rho3);
+                        solveOPT(solver_snopt, "snopt", 1e-3, index, "simple", rho1, rho2, rho3);
                         
                         // delete solver
                         delete solver_admm;

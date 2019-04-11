@@ -308,6 +308,7 @@ namespace drake {
             // The format of the input to the eval() function is the
             // tuple { timestep, state 0, state 1, input 0, input 1 },
             // which has a total length of 1 + 2*num_states + 2*num_inputs.
+            /*
             void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const AutoDiffVecXd>& x, AutoDiffVecXd* y) const {
                 DRAKE_ASSERT(x.size() == 1 + (2 * num_states_) + (2 * num_inputs_));
                 
@@ -334,6 +335,53 @@ namespace drake {
                         ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i])/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
                     }
                 }
+            } */
+            
+            void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const AutoDiffVecXd>& x, AutoDiffVecXd* y) const {
+                DRAKE_ASSERT(x.size() == 1 + (2 * num_states_) + (2 * num_inputs_));
+                
+                int num_obstacles = obstacle_radii_x_.size();
+                
+                // get necessary values from the autodiff input matrix
+                Eigen::VectorXd full_x = math::autoDiffToValueMatrix(x);
+                //double h = full_x[0];
+                Eigen::VectorXd x1 = full_x.segment(1, num_states_);
+                Eigen::VectorXd x2 = full_x.segment(1 + num_states_, num_states_);
+                
+                // prepare alpha parameter
+                std::vector<double> alpha;
+                for (int i = 0; i < num_alpha_; i++) {
+                    alpha.push_back(static_cast<double>(i)/static_cast<double>(num_alpha_));
+                }
+                
+                // prepare vectors to store constraint and gradient
+                Eigen::VectorXd y0 = Eigen::VectorXd::Zero(num_obstacles * num_alpha_);
+                Eigen::MatrixXd dy = Eigen::MatrixXd::Zero(num_obstacles * num_alpha_, full_x.size());
+                
+                // uncomment later
+                for (int i = 0; i < num_obstacles; i++) {
+                    for (int ii = 0; ii < num_alpha_; ii++) {
+                        // entries of d
+                        int index = i * num_alpha_ + ii;
+                        y0(index) = 1 -
+                        ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x_[i]) *
+                        ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x_[i])/(obstacle_radii_x_[i] * obstacle_radii_x_[i]) -
+                        ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i]) *
+                        ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i])/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
+                        
+                        // entries of dd
+                        dy(index, 1) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x_[i])/(obstacle_radii_x_[i] * obstacle_radii_x_[i]);
+                        dy(index, 2) = -2 * (1 - alpha[ii]) * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i])/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
+                        dy(index, 1 + num_states_) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[0] + alpha[ii] * x2[0] - obstacle_center_x_[i])/(obstacle_radii_x_[i] * obstacle_radii_x_[i]);
+                        dy(index, 1 + num_states_ + 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y_[i])/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
+                    }
+                }
+                
+                // y should be same as input (unchanged)
+                // y0 should be constraint calculation as an Eigen::VectorXd
+                // dy should be gradient matrix, with each row corresponding to partial derivatives of a constraint
+                
+                math::initializeAutoDiffGivenGradientMatrix(y0, dy, *y);
             }
             
             void InterpolatedObstacleConstraint::DoEval(const Eigen::Ref<const VectorX<symbolic::Variable>>&,
