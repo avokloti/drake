@@ -51,6 +51,25 @@ drake_cc_binary(
         "@gflags",
     ],
 )
+
+drake_cc_binary(
+    name = "robobee_traj",
+    srcs = ["robobee_traj.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":robobee_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
    
 
 install_data()

@@ -24,7 +24,7 @@ namespace drake {
             template <typename T>
             class RobobeePlant final : public systems::LeafSystem<T> {
             public:
-                DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(RobobeePlant);
+                //DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(RobobeePlant);
                 
                 RobobeePlant();
                 

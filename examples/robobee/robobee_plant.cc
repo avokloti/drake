@@ -28,7 +28,7 @@ namespace drake {
             
             template <typename T>
             RobobeePlant<T>::RobobeePlant() : systems::LeafSystem<T>(systems::SystemTypeTag<robobee::RobobeePlant>{}) {
-                this->DeclareVectorInputPort(RobobeeInput<T>());
+                //this->DeclareVectorInputPort(RobobeeInput<T>());
                 this->DeclareVectorOutputPort(systems::BasicVector<T>(12), &RobobeePlant::CopyStateOut);
                 this->DeclareContinuousState(RobobeeState<T>(), 6, 6, 0);
                 this->DeclareInputPort(systems::kVectorValued, 4);
