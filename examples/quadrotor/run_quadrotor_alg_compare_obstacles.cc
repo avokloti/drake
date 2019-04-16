@@ -53,7 +53,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_results_obstacles_noautodiff/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/warm_start_obstacles/";
                 
                 // arrays related to obstacles
                 int num_obstacles = 4;
