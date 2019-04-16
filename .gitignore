@@ -61,3 +61,6 @@ xcode
 .cproject
 .project
 .settings
+# Added by IT:
+drake/examples/quadrotor/output/
+drake/examples/kuka_iiwa_arm/controlled_kuka/output/
