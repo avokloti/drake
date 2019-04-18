@@ -36,6 +36,11 @@ namespace drake {
                 double T = 5.0;
                 double dt = T/N;
                 
+                // set rho parameters
+                double rho1 = 1;
+                double rho2 = 2000;
+                double rho3 = 2000;
+                
                 // initial and final states
                 Eigen::VectorXd x0(num_states);
                 Eigen::VectorXd xf(num_states);
@@ -143,7 +148,7 @@ namespace drake {
                 }
                 
                 /* WRITE HEADER FILE */
-                int writeHeaderFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj_x, Eigen::Ref<Eigen::MatrixXd> traj_u, double rho1, double rho2, double rho3, int total_iterations, double time, double tolerance, std::string solve_result) {
+                int writeHeaderFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj_x, Eigen::Ref<Eigen::MatrixXd> traj_u, int total_iterations, double time, double tolerance, std::string solve_result) {
                     
                     // open header file
                     std::string header_filename = output_folder + filename + "_header_" + std::to_string(trial) + ".txt";
@@ -332,7 +337,7 @@ namespace drake {
                     return result_str;
                 }
                 
-                solvers::SolutionResult solveOPT(solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, double rho1, double rho2, double rho3) {
+                Eigen::VectorXd solveOPT(solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, Eigen::Ref<Eigen::VectorXd> initial_traj) {
                     
                     std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << "!\n" << std::endl;
                     
@@ -356,32 +361,36 @@ namespace drake {
                     
                     traj_opt.AddInterpolatedObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, num_alpha);
                     
-                    const double timespan_init = T;
+                    // create initial trajectories
+                    Eigen::VectorXd initial_traj_x = initial_traj.segment(0, N * num_states);
+                    Eigen::VectorXd initial_traj_u = initial_traj.segment(N * num_states, N * num_inputs);
+                    
+                    Map<MatrixXd> initial_x(initial_traj_x.data(), num_states, N);
+                    Map<MatrixXd> initial_u(initial_traj_u.data(), num_inputs, N);
+                    
+                    auto traj_init_x = PiecewisePolynomialType::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), initial_x);
+                    auto traj_init_u = PiecewisePolynomialType::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), initial_u);
                     
                     // initialize trajectory
-                    auto traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, x0});
-                    //if (problem_type == "simple_warm_start" || problem_type == "obstacles_warm_start") {
-                    //    traj_init_x = PiecewisePolynomialType::FirstOrderHold({0, timespan_init}, {x0, xf});
-                    //}
-                    traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
+                    traj_opt.SetInitialTrajectory(traj_init_u, traj_init_x);
                     
                     // set solver options
-                    if (solver_name == "ipopt") {
+                    if (solver_name.find("ipopt") != std::string::npos) {
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "tol", 1e-1);
-                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-3);
+                        traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_tol", 1e-2);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "constr_viol_tol", tolerance);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "acceptable_constr_viol_tol", tolerance);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "print_level", 1);
-                        const std::string print_file = output_folder + "ipopt_output_" + std::to_string(trial) + ".txt";
+                        const std::string print_file = output_folder + solver_name + "_output_" + std::to_string(trial) + ".txt";
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "file_print_level", 4);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "output_file", print_file);
-                    } else if (solver_name == "snopt") {
+                    } else if (solver_name.find("snopt") != std::string::npos) {
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.01);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-1);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.05);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-2);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 200000);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 10000);
-                        const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial) + ".out";
+                        const std::string print_file = output_folder + solver_name + "_output_" + std::to_string(trial) + ".out";
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
                     }
                     
@@ -401,14 +410,19 @@ namespace drake {
                     // write output to files
                     writeStateToFile(solver_name, trial, xtraj);
                     writeInputToFile(solver_name, trial, utraj);
-                    writeHeaderFile(solver_name, trial, xtraj, utraj, rho1, rho2, rho3, -1, elapsed_time.count(), tolerance, solutionResultToString(result));
-                    return result;
+                    writeHeaderFile(solver_name, trial, xtraj, utraj, -1, elapsed_time.count(), tolerance, solutionResultToString(result));
+                    
+                    // reshape xtraj and utraj into array
+                    Eigen::VectorXd xtraj_vec = Map<const VectorXd>(xtraj.data(), xtraj.size());
+                    Eigen::VectorXd utraj_vec = Map<const VectorXd>(utraj.data(), utraj.size());
+                    Eigen::VectorXd traj(N * (num_states + num_inputs)); traj << xtraj_vec, utraj_vec;
+                    return traj;
                     
                     // TODO: get number of iterations from SNOPT/IPOPT
                 }
                 
                 /* SOLVE ADMM WITH OBSTACLES */
-                Eigen::MatrixXd solveADMM(systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, double rho1, double rho2, double rho3) {
+                Eigen::VectorXd solveADMM(systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double tolerance, int trial, Eigen::Ref<Eigen::VectorXd> initial_traj) {
                     
                     std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": rho0 = " << rho1 << ", rho1 = " << rho2 << ", rho3 = " << rho3 << "!\n" << std::endl;
                     
@@ -418,8 +432,8 @@ namespace drake {
                     }
                     std::cout << std::endl;
                     
-                    // initialize to a line between x0 and xf
-                    Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                    // initialize to given trajectory
+                    Eigen::VectorXd y(initial_traj);
                     
                     // set parameters
                     solver->setKnotPoints(N);
@@ -483,8 +497,14 @@ namespace drake {
                     // write data to files
                     writeStateToFile(solver_name, trial, xtraj);
                     writeInputToFile(solver_name, trial, utraj);
-                    writeHeaderFile(solver_name, trial, xtraj, utraj, rho1, rho2, rho3, total_iterations, elapsed_time.count(), tolerance, solve_result);
-                    return xtraj;
+                    writeHeaderFile(solver_name, trial, xtraj, utraj, total_iterations, elapsed_time.count(), tolerance, solve_result);
+                    
+                    // reshape xtraj and utraj into array
+                    Eigen::VectorXd xtraj_vec = Map<const VectorXd>(xtraj.data(), xtraj.size());
+                    Eigen::VectorXd utraj_vec = Map<const VectorXd>(utraj.data(), utraj.size());
+                    Eigen::VectorXd traj(N * (num_states + num_inputs)); traj << xtraj_vec, utraj_vec;
+                    
+                    return traj;
                 }
                 
                 
@@ -504,13 +524,10 @@ namespace drake {
                     std::default_random_engine generator;
                     std::uniform_real_distribution<double> unif_dist(0, 1.0);
                     
-                    // make lists of rho parameters to sweep through
-                    double rho1 = 1;
-                    double rho2 = 2000;
-                    double rho3 = 2000;
-                    
                     // number of randomized trials
-                    int num_trials = 10;
+                    int num_trials = 20;
+                    Eigen::VectorXd zero_traj = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
+                    double tolerance = 1e-6;
                     
                     // solve
                     for (int index = 0; index < num_trials; index++) {
@@ -524,19 +541,47 @@ namespace drake {
                         }
                         
                         // make solvers
-                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(quadrotor);
-                        solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();
-                        solvers::MathematicalProgramSolverInterface* solver_snopt = new solvers::SnoptSolver();
+                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm_1 = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(quadrotor);
+                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm_2 = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(quadrotor);
+                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm_3 = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(quadrotor);
+                        
+                        solvers::MathematicalProgramSolverInterface* solver_ipopt_1 = new solvers::IpoptSolver();
+                        solvers::MathematicalProgramSolverInterface* solver_ipopt_2 = new solvers::IpoptSolver();
+                        solvers::MathematicalProgramSolverInterface* solver_ipopt_3 = new solvers::IpoptSolver();
+                        
+                        solvers::MathematicalProgramSolverInterface* solver_snopt_1 = new solvers::SnoptSolver();
+                        solvers::MathematicalProgramSolverInterface* solver_snopt_2 = new solvers::SnoptSolver();
+                        solvers::MathematicalProgramSolverInterface* solver_snopt_3 = new solvers::SnoptSolver();
                         
                         // solve! (printing to file occurs in here)
-                        solveADMM(solver_admm, "admm", 1e-3, index, "simple", rho1, rho2, rho3);
-                        solveOPT(solver_ipopt, "ipopt", 1e-3, index, "simple", rho1, rho2, rho3);
-                        solveOPT(solver_snopt, "snopt", 1e-3, index, "simple", rho1, rho2, rho3);
+                        Eigen::VectorXd admm_traj =  solveADMM(solver_admm_1, "admm", tolerance, index, zero_traj);
+                        Eigen::VectorXd snopt_traj = solveOPT(solver_snopt_1, "snopt", tolerance, index, zero_traj);
+                        Eigen::VectorXd ipopt_traj = solveOPT(solver_ipopt_1, "ipopt", tolerance, index, zero_traj);
+                        
+                        // warm started from ADMM
+                        solveOPT(solver_ipopt_2, "ipopt_ws_a", tolerance, index, admm_traj);
+                        solveOPT(solver_snopt_2, "snopt_ws_a", tolerance, index, admm_traj);
+                        
+                        // warm started from SNOPT
+                        solveADMM(solver_admm_2, "admm_ws_s", tolerance, index, snopt_traj);
+                        solveOPT(solver_ipopt_3, "ipopt_ws_s", tolerance, index, snopt_traj);
+                        
+                        // warm started from IPOPT
+                        solveADMM(solver_admm_3, "admm_ws_i", tolerance, index, ipopt_traj);
+                        solveOPT(solver_snopt_3, "snopt_ws_i", tolerance, index, ipopt_traj);
                         
                         // delete solver
-                        delete solver_admm;
-                        delete solver_ipopt;
-                        delete solver_snopt;
+                        delete solver_admm_1;
+                        delete solver_ipopt_1;
+                        delete solver_snopt_1;
+                        
+                        delete solver_admm_2;
+                        delete solver_ipopt_2;
+                        delete solver_snopt_2;
+                        
+                        delete solver_admm_3;
+                        delete solver_ipopt_3;
+                        delete solver_snopt_3;
                     }
                     
                     return 0;

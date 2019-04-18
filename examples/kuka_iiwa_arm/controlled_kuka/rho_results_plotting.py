@@ -78,7 +78,7 @@ num_trials = 20
 # set solver information
 #dir = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_results_1e4/"
 #dir = "/Users/ira/Documents/drake/examples/quadrotor/output/rho_results_obstacles_noautodiff/"
-dir = "/Users/ira/Documents/drake/examples/quadrotor/output/warm_start/"
+dir = "/Users/ira/Documents/drake/examples/quadrotor/output/warm_start_obstacles/"
 #dir = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/rho_results
 
 # solvers / colors
@@ -152,12 +152,12 @@ def printComparison():
         converges_from_ws[1, 2] = converges_from_ws[1, 2] + np.int(all_traj_diffs[i][2, 6] < 5) #snopt to ipopt
         converges_from_ws[2, 0] = converges_from_ws[2, 0] + np.int(all_traj_diffs[i][0, 7] < 5) #ipopt to admm
         converges_from_ws[2, 1] = converges_from_ws[2, 1] + np.int(all_traj_diffs[i][0, 8] < 5) #ipopt to snopt
-    print("ADMM warm-started with the SNOPT solution converges to it " + str(converges_from_ws[0, 1]) + "/" + str(num_trials) + " times.")
-    print("ADMM warm-started with the IPOPT solution converges to it " + str(converges_from_ws[0, 2]) + "/" + str(num_trials) + " times.")
-    print("SNOPT warm-started with the ADMM solution converges to it " + str(converges_from_ws[1, 0]) + "/" + str(num_trials) + " times.")
-    print("SNOPT warm-started with the IPOPT solution converges to it " + str(converges_from_ws[1, 2]) + "/" + str(num_trials) + " times.")
-    print("IPOPT warm-started with the ADMM solution converges to it " + str(converges_from_ws[2, 0]) + "/" + str(num_trials) + " times.")
-    print("IPOPT warm-started with the SNOPT solution converges to it " + str(converges_from_ws[2, 1]) + "/" + str(num_trials) + " times.")
+    print("ADMM warm-started with the SNOPT solution converges to it " + str(np.int(converges_from_ws[0, 1])) + "/" + str(num_trials) + " times.")
+    print("ADMM warm-started with the IPOPT solution converges to it " + str(np.int(converges_from_ws[0, 2])) + "/" + str(num_trials) + " times.")
+    print("SNOPT warm-started with the ADMM solution converges to it " + str(np.int(converges_from_ws[1, 0])) + "/" + str(num_trials) + " times.")
+    print("SNOPT warm-started with the IPOPT solution converges to it " + str(np.int(converges_from_ws[1, 2])) + "/" + str(num_trials) + " times.")
+    print("IPOPT warm-started with the ADMM solution converges to it " + str(np.int(converges_from_ws[2, 0])) + "/" + str(num_trials) + " times.")
+    print("IPOPT warm-started with the SNOPT solution converges to it " + str(np.int(converges_from_ws[2, 1])) + "/" + str(num_trials) + " times.")
 
                                                                                     
 # also plot average runtimes with and without warmstart
@@ -210,15 +210,20 @@ successes_sum = np.sum(successes, axis=1)
 # plot number of successes per solver
 print("Success results across solvers:")
 print(successes)
+print()
+
+print("Convergence results across solvers:")
+printComparison()
 
 plt.figure()
 ax = plt.gca()
 ax.bar(np.arange(num_solvers), successes_sum/num_trials)
 ax.set_xticks(np.arange(num_solvers))
-ax.set_xticklabels(solvers)
+ax.set_xticklabels(solver_names, rotation='vertical')
 plt.title('Percentage of Successful Solves')
 plt.xlabel('Solvers')
 plt.ylabel('Value')
+plt.tight_layout()
 
 # plot runtime and objective values for solvers, as boxplot
 

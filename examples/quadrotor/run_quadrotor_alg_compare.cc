@@ -361,7 +361,7 @@ namespace drake {
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "output_file", print_file);
                     } else if (solver_name.find("snopt") != std::string::npos) {
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.1);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.05);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-2);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 200000);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major iterations limit", 10000);
