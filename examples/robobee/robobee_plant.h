@@ -85,6 +85,8 @@ namespace drake {
                 
                 std::vector<T> SetInputFromVoltage(const systems::Context<T>& context, const T& V_avg, const T& V_diff, const T& V_off, const T& w);
                 
+                std::vector<T> GetInputBounds(const systems::Context<T>& context);
+                
             private:
                 void CopyStateOut(const systems::Context<T>& context,
                                   systems::BasicVector<T>* output) const;

@@ -1,7 +1,0 @@
-Next lines: N, T, x0, xf, max_iter, time
-30
-5
-0	0	0	0	
-0	4	4	0	
-400
-1.00178

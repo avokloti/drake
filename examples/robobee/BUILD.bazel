@@ -65,12 +65,33 @@ drake_cc_binary(
 	"//systems/primitives:linear_system",
         "//systems/trajectory_optimization:midpoint_transcription",
         "//systems/trajectory_optimization:direct_collocation",
+        "//systems/trajectory_optimization:admm_solver_weighted_v2",
 	"//solvers:snopt_solver",
 	"//solvers:ipopt_solver",
         "@gflags",
     ],
 )
-   
+
+
+drake_cc_binary(
+    name = "run_robobee_rho_sweep",
+    srcs = ["robobee_traj.cc"],
+    copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
+    deps = [
+        ":robobee_plant",
+	"//math:wrap_to",
+	"//systems/framework:system",
+	"//systems/framework:context",
+        "//systems/analysis:simulator",
+	"//systems/primitives:linear_system",
+        "//systems/trajectory_optimization:midpoint_transcription",
+        "//systems/trajectory_optimization:direct_collocation",
+        "//systems/trajectory_optimization:admm_solver_weighted_v2",
+	"//solvers:snopt_solver",
+	"//solvers:ipopt_solver",
+        "@gflags",
+    ],
+)
 
 install_data()
 

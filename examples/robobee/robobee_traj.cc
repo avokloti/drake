@@ -12,6 +12,7 @@
 #include "drake/systems/primitives/linear_system.h"
 #include "drake/systems/trajectory_optimization/midpoint_transcription.h"
 #include "drake/systems/trajectory_optimization/direct_collocation.h"
+#include "drake/systems/trajectory_optimization/admm_solver_weighted_v2.h"
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
 
@@ -32,11 +33,15 @@ namespace drake {
                 int num_inputs = plant->get_input_port().size();
                 
                 // global obstacle parameters
-                int N = 30;
-                double T = 10.0;
+                int N = 40;
+                double T = 5.0;
                 double dt = T/N;
                 double pi = 3.14159;
-                int index = 0;
+                
+                // set rho parameters
+                double rho1 = 0.001;
+                double rho2 = 1e6;
+                double rho3 = 1e6;
                 
                 // initial and final states
                 Eigen::VectorXd x0(num_states);
@@ -55,7 +60,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/robobee/output/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/robobee/output/basic/";
                 
                 //=============================================================================//
                 
@@ -330,42 +335,121 @@ namespace drake {
                     return result;
                 }
                 
+                /* SOLVE ADMM WITH OBSTACLES */
+                Eigen::MatrixXd solveADMM(systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double tolerance, int trial) {
+                    
+                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": rho0 = " << rho1 << ", rho1 = " << rho2 << ", rho3 = " << rho3 << "!\n" << std::endl;
+                    
+                    // initialize to a line between x0 and xf
+                    Eigen::VectorXd y = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                    
+                    // set parameters
+                    solver->setKnotPoints(N);
+                    solver->setTotalTime(T);
+                    solver->setFeasibilityTolerance(tolerance);
+                    solver->setConstraintTolerance(tolerance);
+                    solver->setObjectiveTolerance(0.1);
+                    solver->setStartAndEndState(x0, xf);
+                    solver->setMaxIterations(1000);
+                    
+                    // set RHOS
+                    solver->setRho1(rho1);
+                    solver->setRho2(rho2);
+                    solver->setRho3(rho3);
+                    
+                    // add obstacle constraints
+                    //solver->addInequalityConstraintToAllKnotPoints(obstacleConstraints, num_obstacles, "obstacle constraints");
+                    
+                    // construct cost vectors
+                    Eigen::VectorXd temp_q = -Q.transpose() * xf - Q * xf;
+                    Eigen::VectorXd temp_qf = -Qf.transpose() * xf - Qf * xf;
+                    Eigen::VectorXd temp_r = Eigen::VectorXd::Zero((num_states + num_inputs) * N);
+                    
+                    // add costs
+                    solver->addQuadraticRunningCostOnState(Q, temp_q);
+                    solver->addQuadraticFinalCostOnState(Qf, temp_qf);
+                    Eigen::MatrixXd admmR = 0.001 * R;
+                    solver->addQuadraticRunningCostOnInput(admmR, temp_r);
+                    
+                    // set state and input bounds
+                    solver->setStateUpperBound(state_upper_bound);
+                    solver->setStateLowerBound(state_lower_bound);
+                    solver->setInputLowerBound(input_lower_bound);
+                    solver->setInputUpperBound(input_upper_bound);
+                    
+                    // output file
+                    solver->setOutputFile(output_folder + solver_name + "_output_" + std::to_string(trial) + ".txt");
+                    solver->setTrajFile(output_folder + solver_name + "_traj_" + std::to_string(trial) + ".txt");
+                    
+                    std::string solve_result;
+                    Eigen::MatrixXd xtraj;
+                    Eigen::MatrixXd utraj;
+                    int total_iterations;
+                    
+                    std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
+                    try {
+                        solve_result = solver->solve(y);
+                        xtraj = solver->getSolutionStateTrajectory();
+                        utraj = solver->getSolutionInputTrajectory();
+                        total_iterations = solver->getNumLatestIterations();
+                    } catch (std::exception e) {
+                        solve_result = "ExceptionThrown";
+                        xtraj = Eigen::MatrixXd::Zero(num_states, N);
+                        utraj = Eigen::MatrixXd::Zero(num_inputs, N);
+                        total_iterations = 0;
+                    }
+                    std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
+                    std::chrono::duration<double> elapsed_time = (end_time - start_time);
+                    cout << "Finished! Runtime = " << elapsed_time.count() << " sec." << std::endl;
+                    cout << "Solve result = " << solve_result << std::endl;
+                    
+                    // write data to files
+                    writeStateToFile(solver_name, trial, xtraj);
+                    writeInputToFile(solver_name, trial, utraj);
+                    writeHeaderFile(solver_name, trial, xtraj, utraj, elapsed_time.count(), tolerance, solve_result);
+                    return xtraj;
+                }
                 
                 int do_main(int argc, char* argv[]) {
                     
                     std::cout << plant->get_num_input_ports() << std::endl;
                     
                     // x0 and xf
-                    x0 << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-                    xf << 0, 0, 0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    x0 << 0.2, 0.2, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    xf << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
                     
                     // state upper and lower bounds
-                    state_upper_bound = Eigen::VectorXd::Ones(num_states) * 100;
-                    state_lower_bound = Eigen::VectorXd::Ones(num_states) * -100;
+                    state_upper_bound = Eigen::VectorXd::Ones(num_states) * 20;
+                    state_lower_bound = Eigen::VectorXd::Ones(num_states) * -20;
+                    state_lower_bound(0) = 0; state_lower_bound(1) = 0; state_lower_bound(2) = 0;
                     
                     // find upper and lower bounds on inputs by putting values through the written method
-                    std::vector<double> min_values = plant->SetInputFromVoltage(*context_ptr, 200, 30, -30, 140);
-                    std::vector<double> max_values = plant->SetInputFromVoltage(*context_ptr, 200, 30, 30, 140);
+                    std::vector<double> bounds = plant->GetInputBounds(*context_ptr);
                     
-                    // put in here (and print, for scale)
-                    std::cout << "min values:\n" << min_values[0] << "  " << min_values[1] << "  " << min_values[2] << "  " << min_values[3] << std::endl;
-                    std::cout << "max values:\n" << max_values[0] << "  " << max_values[1] << "  " << max_values[2] << "  " << max_values[3] << std::endl;
+                    input_lower_bound << bounds[0], bounds[2], bounds[4], bounds[6];
+                    input_upper_bound << bounds[1], bounds[3], bounds[5], bounds[7];
                     
-                    // input upper and lower bounds
-                    input_upper_bound << max_values[0], max_values[1], max_values[2], max_values[3];
-                    input_lower_bound << min_values[0], min_values[1], min_values[2], min_values[3];
+                    std::cout << "upper bound:\n" << input_upper_bound << std::endl;
+                    std::cout << "lower bound:\n" << input_lower_bound << std::endl;
+                    
+                    input_upper_bound << 1, 1, 1, 0;
+                    input_lower_bound << -1, -1, -1, 0;
                     
                     // make solvers
                     solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();
                     solvers::MathematicalProgramSolverInterface* solver_snopt = new solvers::SnoptSolver();
+                    systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(plant);
                     
                     // solve! (printing to file occurs in here)
-                    solveOPT(solver_ipopt, "ipopt", 1e-4, index);
-                    //solveOPT(solver_snopt, "snopt", 1e-4, index);
+                    double tolerance = 1e-6;
+                    solveADMM(solver_admm, "admm", tolerance, 0);
+                    solveOPT(solver_ipopt, "ipopt", tolerance, 0);
+                    solveOPT(solver_snopt, "snopt", tolerance, 0);
                     
                     // delete solver
                     delete solver_ipopt;
                     delete solver_snopt;
+                    delete solver_admm;
                     
                     return 0;
                 }

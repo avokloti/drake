@@ -1,0 +1,21 @@
+
+---------------------------------
+STARTING SOLVE:
+---------------------------------
+num states (in ADMM): 12
+num inputs (in ADMM): 4
+num constraints per point = 32
+constraints list length = 4
+
+Iteration 0 -- objective cost: 0.02882 -- feasibility (inf-norm): 0.00374797 -- constraint satisfaction (inf-norm): 0 -- full objective: 615.081 -- G norm: 0 -- rho0: 0.001 -- rho1: 1.02e+06 -- rho2: 1.05e+06
+Iteration 1 -- objective cost: 0.0289381 -- feasibility (inf-norm): 6.07359e-08 -- constraint satisfaction (inf-norm): 0.0142794 -- full objective: 622.776 -- G norm: 2.64575 -- rho0: 0.001 -- rho1: 1.0404e+06 -- rho2: 1.1025e+06
+Iteration 2 -- objective cost: 0.028898 -- feasibility (inf-norm): 1.42204e-08 -- constraint satisfaction (inf-norm): 1.05778e-07 -- full objective: 0.028898 -- G norm: 2.1 -- rho0: 0.001 -- rho1: 1.06121e+06 -- rho2: 1.15762e+06
+Finished at iteration 3 -- objective cost: 0.028898 -- feasibility (inf-norm): 1.42204e-08 -- constraint satisfaction (inf-norm): 1.05778e-07
+
+---------------------------------
+TIMING:
+---------------------------------
+Total time spent in dynamics: 0.000771 (sec)
+Total time spent in first ADMM update: 0.032474 (sec)
+Total time spent in second ADMM update: 0.050889 (sec)
+Total update time: 0.083363 (sec)

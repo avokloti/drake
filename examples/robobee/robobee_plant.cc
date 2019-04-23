@@ -121,6 +121,52 @@ namespace drake {
                 std::vector<T> input = {F_t, tau_alpha, tau_beta, tau_gamma};
                 return input;
             }
+            
+            template <typename T>
+            std::vector<T> RobobeePlant<T>::GetInputBounds(const systems::Context<T>& context) {
+                
+                const RobobeeParams<T>& params = get_parameters(context);
+                
+                // constant
+                const T& rho_B_Cl = params.rho() * params.B() * params.Cl();
+                
+                // constant
+                const T& G0 = params.A() / params.k_eq();
+                
+                // minimum when w is small (140)
+                const T& w_Gw_squared_min = (params.A() * params.A() * 140 * 140) /
+                (params.m_eq() * params.m_eq() * 140 * 140 * 140 * 140 + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * 140 * 140 + params.k_eq() * params.k_eq());
+                
+                // maximum when w is at resonance (160)
+                const T& w_Gw_squared_max = (params.A() * params.A() * 160 * 160) /
+                (params.m_eq() * params.m_eq() * 160 * 160 * 160 * 160 + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * 160 * 160 + params.k_eq() * params.k_eq());
+                
+                // minimum when w_Gw_squared_min, V_avg = 160, V_dif = 0
+                const T& F_t_min = 0.5 * rho_B_Cl * w_Gw_squared_min * (160 * 160 + 0 * 0);
+                
+                // maximum when w_Gw_squared_max, V_avg = 200, V_dif = 30
+                const T& F_t_max = 0.5 * rho_B_Cl * w_Gw_squared_max * (200 * 200 + 30 * 30);
+                
+                // minimum when w_Gw_squared_max, V_avg = 160, V_dif = -30
+                const T& tau_alpha_min = params.r_cp() * rho_B_Cl * w_Gw_squared_max * (200 * (-30));
+                
+                // maximum when w_Gw_squared_max, V_off = 160, V_dif = 30
+                const T& tau_alpha_max = params.r_cp() * rho_B_Cl * w_Gw_squared_max * (200 * (30));
+                
+                // minimum when F_t_max, V_dif = -30
+                const T& tau_beta_min = params.r_cp() * (-30) * G0 * F_t_max;
+                
+                // maximum when F_t_max, V_dif = 30
+                const T& tau_beta_max = params.r_cp() * (30) * G0 * F_t_max;
+                
+                // fix at 0 (assumes kappa = 0.5)
+                const T& tau_gamma_min = 0;
+                const T& tau_gamma_max = 0;
+                
+                // return above values
+                std::vector<T> input = {F_t_min, F_t_max, tau_alpha_min, tau_alpha_max, tau_beta_min, tau_beta_max, tau_gamma_min, tau_gamma_max};
+                return input;
+            }
         }
     }
 }

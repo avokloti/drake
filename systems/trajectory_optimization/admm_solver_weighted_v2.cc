@@ -68,7 +68,8 @@ namespace drake {
                     Eigen::VectorXd mid_input(num_inputs);
                     Eigen::VectorXd temp;
                     Eigen::VectorXd feasibilityVector = Eigen::VectorXd::Zero((N+1) * num_states);
-                    Eigen::VectorXd constraintVector = Eigen::VectorXd::Zero((N+1) * num_states);
+                    //Eigen::VectorXd constraintVector = Eigen::VectorXd::Zero((N+1) * num_states);
+                    Eigen::VectorXd constraintVector = Eigen::VectorXd::Zero(N * num_constraints);
                     double objective;
                     double oldObjective;
                     double feasibilityNorm;
@@ -262,8 +263,9 @@ namespace drake {
                                     }
                                 }
                                 
-                                // for each constraint, check if constraint is active and update weights in that case
+                                //constraintVector.segment(ii * num_constraints + running_constraint_counter, cf.length) = single_g;
                                 
+                                // for each constraint, check if constraint is active and update weights in that case
                                 for (int iv = 0; iv < cf.length; iv++) {
                                     // index of constraint
                                     int index = ii * num_constraints + running_constraint_counter + iv;
