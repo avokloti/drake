@@ -22,7 +22,7 @@ def readHeaderFile(filename):
     return [N, T, x0, xf, time, feas2norm, feasinfnorm, constraint2norm, constraintinfnorm, objective, solve_result]
 
 # directory/solver names
-dir = "/Users/ira/Documents/drake/examples/robobee/output/"
+dir = "/Users/ira/Documents/drake/examples/robobee/output/basic/"
 solvers = ["admm", "snopt", "ipopt"]
 colors = ["maroon", "green", "blue"]
 index = 0

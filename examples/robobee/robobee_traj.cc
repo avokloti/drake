@@ -40,8 +40,8 @@ namespace drake {
                 
                 // set rho parameters
                 double rho1 = 0.001;
-                double rho2 = 1e6;
-                double rho3 = 1e6;
+                double rho2 = 10000;
+                double rho3 = 10000;
                 
                 // initial and final states
                 Eigen::VectorXd x0(num_states);
