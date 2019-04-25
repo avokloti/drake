@@ -55,6 +55,10 @@ successes = [result == 'SolutionFound' for result in results]
 itlim = [result == 'IterationLimit' for result in results]
 divs = [result == 'ExceptionThrown' for result in results]
 
+# find unique values
+feas_tols_list = np.unique(feas_tols)
+opt_tols_list = np.unique(opt_tols)
+
 # reshaped form
 feas_tols = np.reshape(feas_tols, (num_solvers, total_trials))
 opt_tols = np.reshape(opt_tols, (num_solvers, total_trials))
@@ -65,4 +69,22 @@ constraints = np.reshape(constraintinfnorm, (num_solvers, total_trials))
 feasibility = np.reshape(feasinfnorm, (num_solvers, total_trials))
 times = np.reshape(times, (num_solvers, total_trials))
 
-# for each
+# plot runtime for snopt, ipopt, admm over tolerance values
+lines = ["-","--","-.",":"]
+
+fig, ax = plt.subplots()
+for ot in np.arange(num_opt_tols):
+    for s in np.arange(num_solvers):
+        # reshape data for this optimality tolerance
+        values = np.reshape(times[s,ot * num_trials * num_feas_tols:(ot+1) * num_trials * num_feas_tols], (num_feas_tols, num_trials))
+        # find average and sd for each feasibility tolerance value
+        value_means = np.mean(values, axis = 1)
+        value_stds = np.std(values, axis=1)
+        # plot with error bars
+        plt.errorbar(np.arange(num_feas_tols), value_means, yerr=value_stds, color = colors[s], label = solvers[s], ls=lines[ot])
+
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
