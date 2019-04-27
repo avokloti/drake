@@ -71,6 +71,11 @@ namespace drake {
                 const T& tau_beta = get_tau_beta(context);
                 const T& tau_gamma = get_tau_gamma(context);
                 
+                //F_t = F_t * 1e-4;
+                //tau_alpha = tau_alpha * 1e-4;
+                //tau_beta = tau_beta * 1e-4;
+                //tau_gamma = tau_gamma * 1e-4;
+                
                 // construct (and fill in) this derivative_vector
                 RobobeeState<T>& derivative_vector = get_mutable_state(derivatives);
                 
@@ -133,13 +138,15 @@ namespace drake {
                 // constant
                 const T& G0 = params.A() / params.k_eq();
                 
-                // minimum when w is small (140)
-                const T& w_Gw_squared_min = (params.A() * params.A() * 140 * 140) /
-                (params.m_eq() * params.m_eq() * 140 * 140 * 140 * 140 + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * 140 * 140 + params.k_eq() * params.k_eq());
+                // minimum when w is small
+                double w_min = 100 * 2 * 3.14159;
+                const T& w_Gw_squared_min = (params.A() * params.A() * w_min * w_min) /
+                (params.m_eq() * params.m_eq() * w_min * w_min * w_min * w_min + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * w_min * w_min + params.k_eq() * params.k_eq());
                 
-                // maximum when w is at resonance (160)
-                const T& w_Gw_squared_max = (params.A() * params.A() * 160 * 160) /
-                (params.m_eq() * params.m_eq() * 160 * 160 * 160 * 160 + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * 160 * 160 + params.k_eq() * params.k_eq());
+                // maximum when w is at resonance 
+                double w_max = 180 * 2 * 3.14159; //(in radians)
+                const T& w_Gw_squared_max = (params.A() * params.A() * w_max * w_max) /
+                (params.m_eq() * params.m_eq() * w_max * w_max * w_max * w_max + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * w_max * w_max + params.k_eq() * params.k_eq());
                 
                 // minimum when w_Gw_squared_min, V_avg = 160, V_dif = 0
                 const T& F_t_min = 0.5 * rho_B_Cl * w_Gw_squared_min * (160 * 160 + 0 * 0);

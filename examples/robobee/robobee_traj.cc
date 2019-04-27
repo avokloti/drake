@@ -415,8 +415,8 @@ namespace drake {
                     std::cout << plant->get_num_input_ports() << std::endl;
                     
                     // x0 and xf
-                    x0 << 0.2, 0.2, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-                    xf << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    x0 << 2, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    xf << 0.01, 0.01, 0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0;
                     
                     // state upper and lower bounds
                     state_upper_bound = Eigen::VectorXd::Ones(num_states) * 20;
@@ -432,8 +432,8 @@ namespace drake {
                     std::cout << "upper bound:\n" << input_upper_bound << std::endl;
                     std::cout << "lower bound:\n" << input_lower_bound << std::endl;
                     
-                    input_upper_bound << 1, 1, 1, 0;
-                    input_lower_bound << -1, -1, -1, 0;
+                    //input_upper_bound << 1, 1, 1, 0;
+                    //input_lower_bound << -1, -1, -1, 0;
                     
                     // make solvers
                     solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();

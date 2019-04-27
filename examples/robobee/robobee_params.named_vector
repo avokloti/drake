@@ -11,28 +11,28 @@ element {
     name: "m"
     doc: "Mass of Robobee."
     doc_units: "kg"
-    default_value: "0.087"
+    default_value: "8.7e-7"
     min_value: "0.0"
 }
 element {
     name: "I_alpha"
     doc: "Inertia around x-axis."
     doc_units: "kg m^2"
-    default_value: "2.45 * 0.000000001"
+    default_value: "2.45e-12"
     min_value: "0.0"
 }
 element {
     name: "I_beta"
     doc: "Inertia around y-axis."
     doc_units: "kg m^2"
-    default_value: "1.34 * 0.000000001"
+    default_value: "1.34e-12"
     min_value: "0.0"
 }
 element {
     name: "I_gamma"
     doc: "Inertia around z-axis."
     doc_units: "kg m^2"
-    default_value: "102.2 * 0.000000001"
+    default_value: "102.2e-12"
     min_value: "0.0"
 }
 element {
@@ -75,14 +75,14 @@ element {
     name: "A"
     doc: "transfer function numerator coefficient"
     doc_units: ""
-    default_value: "151.4"
+    default_value: "151.4*0.0063"
     min_value: "0.0"
 }
 element {
     name: "m_eq"
     doc: "transfer function characteristic polynomial coefficient"
     doc_units: "kg"
-    default_value: "0.528"
+    default_value: "5.28e-4"
     min_value: "0.0"
 }
 element {

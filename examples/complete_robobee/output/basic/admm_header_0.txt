@@ -1,0 +1,12 @@
+Next lines: N, T, x0, xf, time, feasibility 2-norm, feasibility inf-norm, constraints 2-norm, constraints inf-norm, objective value, solve result
+20
+4
+0	0	1	0	0	0	0	0	0	0	0	0	
+0	0	0	0	0	0	0	0	0	0	0	0	
+4.385
+7.73871
+1.81042
+0
+0
+6.95323e-310
+IterationLimit
