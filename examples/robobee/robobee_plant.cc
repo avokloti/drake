@@ -66,15 +66,12 @@ namespace drake {
                 const RobobeeParams<T>& params = get_parameters(context);
                 
                 // get specific inputs values
-                const T& F_t = get_F_t(context);
-                const T& tau_alpha = get_tau_alpha(context);
-                const T& tau_beta = get_tau_beta(context);
-                const T& tau_gamma = get_tau_gamma(context);
+                std::vector<double> scale_factor = {1e4, 1e10, 1e10, 1e10};
+                const T& F_t = 1.0/scale_factor.at(0) * get_F_t(context);
+                const T& tau_alpha = 1.0/scale_factor.at(1) * get_tau_alpha(context);
+                const T& tau_beta = 1.0/scale_factor.at(2) * get_tau_beta(context);
+                const T& tau_gamma = 1.0/scale_factor.at(3) * get_tau_gamma(context);
                 
-                //F_t = F_t * 1e-4;
-                //tau_alpha = tau_alpha * 1e-4;
-                //tau_beta = tau_beta * 1e-4;
-                //tau_gamma = tau_gamma * 1e-4;
                 
                 // construct (and fill in) this derivative_vector
                 RobobeeState<T>& derivative_vector = get_mutable_state(derivatives);
@@ -132,6 +129,9 @@ namespace drake {
                 
                 const RobobeeParams<T>& params = get_parameters(context);
                 
+                // scale
+                std::vector<double> scale_factor = {1e4, 1e10, 1e10, 1e10};
+                
                 // constant
                 const T& rho_B_Cl = params.rho() * params.B() * params.Cl();
                 
@@ -149,26 +149,38 @@ namespace drake {
                 (params.m_eq() * params.m_eq() * w_max * w_max * w_max * w_max + (params.b_eq() * params.b_eq() - 2 * params.m_eq() * params.k_eq()) * w_max * w_max + params.k_eq() * params.k_eq());
                 
                 // minimum when w_Gw_squared_min, V_avg = 160, V_dif = 0
-                const T& F_t_min = 0.5 * rho_B_Cl * w_Gw_squared_min * (160 * 160 + 0 * 0);
+                const T& F_t_min = scale_factor.at(0) * 0.5 * rho_B_Cl * w_Gw_squared_min * (160 * 160 + 0 * 0);
                 
                 // maximum when w_Gw_squared_max, V_avg = 200, V_dif = 30
-                const T& F_t_max = 0.5 * rho_B_Cl * w_Gw_squared_max * (200 * 200 + 30 * 30);
+                const T& F_t_max = scale_factor.at(0) * 0.5 * rho_B_Cl * w_Gw_squared_max * (200 * 200 + 30 * 30);
                 
                 // minimum when w_Gw_squared_max, V_avg = 160, V_dif = -30
-                const T& tau_alpha_min = params.r_cp() * rho_B_Cl * w_Gw_squared_max * (200 * (-30));
+                const T& tau_alpha_min = scale_factor.at(1) * params.r_cp() * rho_B_Cl * w_Gw_squared_max * (200 * (-30));
                 
                 // maximum when w_Gw_squared_max, V_off = 160, V_dif = 30
-                const T& tau_alpha_max = params.r_cp() * rho_B_Cl * w_Gw_squared_max * (200 * (30));
+                const T& tau_alpha_max = scale_factor.at(1) * params.r_cp() * rho_B_Cl * w_Gw_squared_max * (200 * (30));
                 
                 // minimum when F_t_max, V_dif = -30
-                const T& tau_beta_min = params.r_cp() * (-30) * G0 * F_t_max;
+                const T& tau_beta_min = scale_factor.at(2) * params.r_cp() * (-30) * G0 * F_t_max/scale_factor.at(0);
                 
                 // maximum when F_t_max, V_dif = 30
-                const T& tau_beta_max = params.r_cp() * (30) * G0 * F_t_max;
+                const T& tau_beta_max = scale_factor.at(2) * params.r_cp() * (30) * G0 * F_t_max/scale_factor.at(0);
                 
                 // fix at 0 (assumes kappa = 0.5)
                 const T& tau_gamma_min = 0;
                 const T& tau_gamma_max = 0;
+                
+                // scale
+                /*
+                std::vector<double> scale_factor = {1e4, 1e6, 1e6, 1e6};
+                F_t_min = F_t_min * scale_factor.at(0);
+                F_t_max = F_t_max * scale_factor.at(0);
+                tau_alpha_min = tau_alpha_min * scale_factor.at(1);
+                tau_alpha_max = tau_alpha_max * scale_factor.at(1);
+                tau_beta_min = tau_beta_min * scale_factor.at(2);
+                tau_beta_max = tau_beta_max * scale_factor.at(2);
+                tau_gamma_min = tau_gamma_min * scale_factor.at(3);
+                tau_gamma_max = tau_gamma_max * scale_factor.at(3); */
                 
                 // return above values
                 std::vector<T> input = {F_t_min, F_t_max, tau_alpha_min, tau_alpha_max, tau_beta_min, tau_beta_max, tau_gamma_min, tau_gamma_max};

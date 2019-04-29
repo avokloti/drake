@@ -59,6 +59,18 @@ namespace drake {
             
             // Compute the actual physics.
             template <typename T>
+            std::vector<double> CompleteRobobeePlant<T>::GetInputBounds() const {
+                std::vector<double> scale_factor = {0.01, 0.1, 1000, 1000};
+                
+                double pi = 3.14159;
+                
+                std::vector<double> bounds = {100 * 2 * pi * scale_factor.at(0), 180 * 2 * pi * scale_factor.at(0), 160 * scale_factor.at(1), 200 * scale_factor.at(1), -30 * scale_factor.at(2), 30 * scale_factor.at(2), -30 * scale_factor.at(3), 30 * scale_factor.at(3)};
+                
+                return bounds;
+            }
+            
+            // Compute the actual physics.
+            template <typename T>
             void CompleteRobobeePlant<T>::DoCalcTimeDerivatives(const systems::Context<T>& context, systems::ContinuousState<T>* derivatives) const {
                 
                 // get robobee state and parameters
@@ -66,10 +78,13 @@ namespace drake {
                 const CompleteRobobeeParams<T>& params = get_parameters(context);
                 
                 // get specific inputs values
-                const T& w = get_w(context);
-                const T& V_avg = get_V_avg(context);
-                const T& V_dif = get_V_dif(context);
-                const T& V_off = get_V_off(context);
+                std::vector<double> scale_factor = {0.01, 0.1, 1000, 1000};
+                
+                // get specific inputs values
+                const T& w = get_w(context) / scale_factor.at(0);
+                const T& V_avg = get_V_avg(context) / scale_factor.at(1);
+                const T& V_dif = get_V_dif(context) / scale_factor.at(2);
+                const T& V_off = get_V_off(context) / scale_factor.at(3);
                 
                 // precompute soem values
                 const T& rho_B_Cl = params.rho() * params.B() * params.Cl();

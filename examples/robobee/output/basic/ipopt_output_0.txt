@@ -15,28 +15,25 @@ Total number of inequality constraints...............:        0
    inequality constraints with lower and upper bounds:        0
         inequality constraints with only upper bounds:        0
 
-Restoration phase converged to a feasible point that is
-unacceptable to the filter for the original problem.
-Restoration phase in the restoration phase failed.
 
-Number of Iterations....: 80
+Number of Iterations....: 53
 
                                    (scaled)                 (unscaled)
-Objective...............:   1.3667249615981668e-06    1.3667249615981668e-06
-Dual infeasibility......:   7.3829789202760679e-04    7.3829789202760679e-04
-Constraint violation....:   8.8601567189821887e-02    6.3650551142113436e+01
-Complementarity.........:   4.3290064742765453e-07    4.3290064742765453e-07
-Overall NLP error.......:   8.8601567189821887e-02    6.3650551142113436e+01
+Objective...............:   4.2472389753307516e+00    4.2472389753307516e+00
+Dual infeasibility......:   4.8540103135561417e-03    4.8540103135561417e-03
+Constraint violation....:   8.3365857550532496e-09    8.3365857550532496e-09
+Complementarity.........:   1.0000000000000003e-11    1.0000000000000003e-11
+Overall NLP error.......:   4.8540103135561417e-03    4.8540103135561417e-03
 
 
-Number of objective function evaluations             = 247
-Number of objective gradient evaluations             = 76
-Number of equality constraint evaluations            = 247
+Number of objective function evaluations             = 97
+Number of objective gradient evaluations             = 54
+Number of equality constraint evaluations            = 97
 Number of inequality constraint evaluations          = 0
-Number of equality constraint Jacobian evaluations   = 82
+Number of equality constraint Jacobian evaluations   = 54
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 0
-Total CPU secs in IPOPT (w/o function evaluations)   =      0.177
-Total CPU secs in NLP function evaluations           =      0.635
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.184
+Total CPU secs in NLP function evaluations           =      0.504
 
-EXIT: Restoration Failed!
+EXIT: Optimal Solution Found.

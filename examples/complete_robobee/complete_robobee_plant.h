@@ -79,6 +79,8 @@ namespace drake {
                     return this->EvalVectorInput(context, 0)->GetAtIndex(3);
                 }
                 
+                std::vector<double> GetInputBounds() const;
+                
                 CompleteRobobeeParams<T>& get_mutable_parameters(systems::Context<T>* context) const {
                     return this->template GetMutableNumericParameter<CompleteRobobeeParams>(context, 0);
                 }

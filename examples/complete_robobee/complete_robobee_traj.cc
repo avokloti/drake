@@ -33,24 +33,24 @@ namespace drake {
                 int num_inputs = plant->get_input_port().size();
                 
                 // global obstacle parameters
-                int N = 20;
+                int N = 40;
                 double T = 4.0;
                 double dt = T/N;
                 double pi = 3.14159;
                 
                 // set rho parameters
-                double rho1 = 0.001;
-                double rho2 = 1000;
-                double rho3 = 1000;
+                double rho1 = 0.1;
+                double rho2 = 100;
+                double rho3 = 100;
                 
                 // initial and final states
                 Eigen::VectorXd x0(num_states);
                 Eigen::VectorXd xf(num_states);
                 
                 // matrices for running and final costs
-                Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(num_states, num_states);
-                Eigen::MatrixXd Qf = Eigen::MatrixXd::Zero(num_states, num_states);
-                Eigen::MatrixXd R = Eigen::MatrixXd::Identity(num_inputs, num_inputs);
+                Eigen::MatrixXd Q;
+                Eigen::MatrixXd Qf;
+                Eigen::MatrixXd R;
                 
                 // upper and lower bounds
                 Eigen::VectorXd state_upper_bound(num_states);
@@ -60,7 +60,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/complete_robobee/output/basic/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/complete_robobee/output/random/";
                 
                 //=============================================================================//
                 
@@ -287,7 +287,7 @@ namespace drake {
                     traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     
                     traj_opt.AddRunningCost(u.dot(R * u));
-                    //traj_opt.AddRunningCost(u.dot(R * u) + (x - xf).dot(Q * (x - xf)));
+                    traj_opt.AddRunningCost((x - xf).dot(Q * (x - xf)));
                     //traj_opt.AddFinalCost((x - xf).dot(Qf * (x - xf)));
                     
                     // initialize trajectory
@@ -367,9 +367,8 @@ namespace drake {
                     
                     // add costs
                     solver->addQuadraticRunningCostOnState(Q, temp_q);
-                    solver->addQuadraticFinalCostOnState(Qf, temp_qf);
-                    Eigen::MatrixXd admmR = 0.001 * R;
-                    solver->addQuadraticRunningCostOnInput(admmR, temp_r);
+                    solver->addQuadraticRunningCostOnInput(R, temp_r);
+                    //solver->addQuadraticFinalCostOnState(Qf, temp_qf);
                     
                     // set state and input bounds
                     solver->setStateUpperBound(state_upper_bound);
@@ -414,45 +413,52 @@ namespace drake {
                     
                     std::cout << plant->get_num_input_ports() << std::endl;
                     
-                    // x0 and xf
-                    x0 << 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-                    xf << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    // try state-based cost?
+                    Q = Eigen::MatrixXd::Identity(num_states, num_states);
+                    Qf = Eigen::MatrixXd::Identity(num_states, num_states);
+                    R = Eigen::MatrixXd::Zero(num_inputs, num_inputs);
                     
                     // state upper and lower bounds
                     state_upper_bound = Eigen::VectorXd::Ones(num_states) * 20;
                     state_lower_bound = Eigen::VectorXd::Ones(num_states) * -20;
                     state_lower_bound(0) = 0; state_lower_bound(1) = 0; state_lower_bound(2) = 0;
                     
-                    // find upper and lower bounds on inputs by putting values through the written method
-                    //std::vector<double> bounds = plant->GetInputBounds(*context_ptr);
+                    std::vector<double> bounds = plant->GetInputBounds();
                     
-                    //input_lower_bound << bounds[0], bounds[2], bounds[4], bounds[6];
-                    //input_upper_bound << bounds[1], bounds[3], bounds[5], bounds[7];
+                    input_lower_bound << bounds[0], bounds[2], bounds[4], bounds[6];
+                    input_upper_bound << bounds[1], bounds[3], bounds[5], bounds[7];
                     
-                    //std::cout << "upper bound:\n" << input_upper_bound << std::endl;
-                    //std::cout << "lower bound:\n" << input_lower_bound << std::endl;
+                    // define random value generators for initial point
+                    std::default_random_engine generator;
+                    std::uniform_real_distribution<double> unif_dist(0, 1.0);
                     
-                    //input_upper_bound << 180, 200, 30, 30;
-                    //input_lower_bound << 100, 160, -30, -30;
-                    
-                    input_upper_bound << 200, 200, 200, 200;
-                    input_lower_bound << -200, -200, -200, -200;
-                    
-                    // make solvers
-                    solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();
-                    solvers::MathematicalProgramSolverInterface* solver_snopt = new solvers::SnoptSolver();
-                    systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(plant);
-                    
-                    // solve! (printing to file occurs in here)
-                    double tolerance = 1e-6;
-                    solveADMM(solver_admm, "admm", tolerance, 0);
-                    solveOPT(solver_ipopt, "ipopt", tolerance, 0);
-                    solveOPT(solver_snopt, "snopt", tolerance, 0);
-                    
-                    // delete solver
-                    delete solver_ipopt;
-                    delete solver_snopt;
-                    delete solver_admm;
+                    // for each trial, randomize and run
+                    for (int trial = 0; trial < 20; trial++) {
+                        // x0 and xf
+                        x0 << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                        
+                        x0[0] = unif_dist(generator) * 5.0;
+                        x0[1] = unif_dist(generator) * 5.0;
+                        x0[2] = unif_dist(generator) * 5.0;
+                        
+                        xf << 0, 0, 0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                        
+                        // make solvers
+                        solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();
+                        solvers::MathematicalProgramSolverInterface* solver_snopt = new solvers::SnoptSolver();
+                        systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver_admm = new systems::trajectory_optimization::admm_solver::AdmmSolverWeightedV2(plant);
+                        
+                        // solve! (printing to file occurs in here)
+                        double tolerance = 1e-6;
+                        solveADMM(solver_admm, "admm", tolerance, trial);
+                        solveOPT(solver_ipopt, "ipopt", tolerance, trial);
+                        solveOPT(solver_snopt, "snopt", tolerance, trial);
+                        
+                        // delete solver
+                        delete solver_ipopt;
+                        delete solver_snopt;
+                        delete solver_admm;
+                    }
                     
                     return 0;
                 }
