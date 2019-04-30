@@ -1,12 +1,12 @@
 Next lines: N, T, x0, xf, time, feasibility 2-norm, feasibility inf-norm, constraints 2-norm, constraints inf-norm, objective value, solve result
 40
 4
-0.826993	4.95402	4.3532	0	0	0	0	0	0	0	0	0	
+-3.34601	4.90804	4.3532	0	0	0	0	0	0	0	0	0	
 0	0	0.01	0	0	0	0	0	0	0	0	0	
-0.556185
-5.44371e-07
-2.2333e-07
+0.427601
+5.99494e-07
+1.83151e-07
 0
 0
-647.389
+804.349
 SolutionFound

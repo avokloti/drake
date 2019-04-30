@@ -9,24 +9,24 @@ Total number of inequality constraints...............:        0
         inequality constraints with only upper bounds:        0
 
 
-Number of Iterations....: 99
+Number of Iterations....: 212
 
                                    (scaled)                 (unscaled)
-Objective...............:   2.2343712777183061e+01    2.2343712777183061e+01
-Dual infeasibility......:   7.9632483034845411e-04    7.9632483034845411e-04
-Constraint violation....:   7.8993407842675722e-08    7.8993407842675722e-08
-Complementarity.........:   1.7200531370958681e-09    1.7200531370958681e-09
-Overall NLP error.......:   1.5457271904321338e-04    7.9632483034845411e-04
+Objective...............:   1.2490339724024162e+02    1.2490339724024162e+02
+Dual infeasibility......:   1.0435343553286190e-03    1.0435343553286190e-03
+Constraint violation....:   4.1676873774321166e-07    4.1676873774321166e-07
+Complementarity.........:   1.3966489243658787e-07    1.3966489243658787e-07
+Overall NLP error.......:   1.0435343553286190e-03    1.0435343553286190e-03
 
 
-Number of objective function evaluations             = 144
-Number of objective gradient evaluations             = 100
-Number of equality constraint evaluations            = 144
+Number of objective function evaluations             = 386
+Number of objective gradient evaluations             = 213
+Number of equality constraint evaluations            = 386
 Number of inequality constraint evaluations          = 0
-Number of equality constraint Jacobian evaluations   = 100
+Number of equality constraint Jacobian evaluations   = 213
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 0
-Total CPU secs in IPOPT (w/o function evaluations)   =      0.354
-Total CPU secs in NLP function evaluations           =      0.762
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.709
+Total CPU secs in NLP function evaluations           =      1.967
 
 EXIT: Optimal Solution Found.

@@ -421,7 +421,7 @@ namespace drake {
                     // state upper and lower bounds
                     state_upper_bound = Eigen::VectorXd::Ones(num_states) * 20;
                     state_lower_bound = Eigen::VectorXd::Ones(num_states) * -20;
-                    state_lower_bound(0) = 0; state_lower_bound(1) = 0; state_lower_bound(2) = 0;
+                    state_lower_bound(2) = 0;
                     
                     // find upper and lower bounds on inputs by putting values through the written method
                     std::vector<double> bounds = plant->GetInputBounds(*context_ptr);
@@ -429,8 +429,8 @@ namespace drake {
                     input_lower_bound << bounds[0], bounds[2], bounds[4], bounds[6];
                     input_upper_bound << bounds[1], bounds[3], bounds[5], bounds[7];
                     
-                    // define random value generators for initial point
-                    std::default_random_engine generator;
+                    // define (seeded!) random value generators for initial point
+                    std::default_random_engine generator(0);
                     std::uniform_real_distribution<double> unif_dist(0, 1.0);
                     
                     // for each trial, randomize and run
@@ -438,11 +438,13 @@ namespace drake {
                         // x0 and xf
                         x0 << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
                         
-                        x0[0] = unif_dist(generator) * 5.0;
-                        x0[1] = unif_dist(generator) * 5.0;
+                        x0[0] = unif_dist(generator) * 10.0 - 5.0;
+                        x0[1] = unif_dist(generator) * 10.0 - 5.0;
                         x0[2] = unif_dist(generator) * 5.0;
                         
                         xf << 0, 0, 0.01, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                        
+                        std::cout << "x0, x1, x2: " << x0[0] << ", " << x0[1] << ", " << x0[2] << ", " << std::endl;
                     
                         // make solvers
                         solvers::MathematicalProgramSolverInterface* solver_ipopt = new solvers::IpoptSolver();
