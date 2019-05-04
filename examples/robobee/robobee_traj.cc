@@ -39,9 +39,9 @@ namespace drake {
                 double pi = 3.14159;
                 
                 // set rho parameters
-                double rho1 = 0.1;
-                double rho2 = 1000;
-                double rho3 = 1000;
+                double rho1 = 1;
+                double rho2 = 10000;
+                double rho3 = 10000;
                 
                 // initial and final states
                 Eigen::VectorXd x0(num_states);

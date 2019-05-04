@@ -3,10 +3,10 @@ Next lines: N, T, x0, xf, time, feasibility 2-norm, feasibility inf-norm, constr
 4
 -4.14968	3.91611	0.948449	0	0	0	0	0	0	0	0	0	
 0	0	0.01	0	0	0	0	0	0	0	0	0	
-0.429199
+0.42144
 6.64605e-07
 2.01519e-07
 0
 0
-499.367
+499.365
 SolutionFound
