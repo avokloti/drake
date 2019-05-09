@@ -80,7 +80,7 @@ namespace drake {
                     int num_inputs = 7;
                     
                     // define time and number of points
-                    int N = 60;
+                    int N = 40;
                     double T = 4.0;
                     double dt = T/N;
                     

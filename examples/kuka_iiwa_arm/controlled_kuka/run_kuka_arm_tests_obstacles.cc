@@ -85,7 +85,7 @@ namespace drake {
                 int num_obstacles = 1;
                 
                 // define time and number of points
-                int N = 15;
+                int N = 30;
                 double T = 4.0;
                 double dt = T/N;
                 
@@ -315,10 +315,10 @@ namespace drake {
                     xf << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0;
                     
                     // obstacles
-                    obstacle_center_x << 1.0;
-                    obstacle_center_y << 1.0;
-                    obstacle_radii_x << 0.2;
-                    obstacle_radii_y << 0.2;
+                    obstacle_center_x << -0.1;
+                    obstacle_center_y << 0.0;
+                    obstacle_radii_x << 0.1;
+                    obstacle_radii_y << 0.1;
                 }
                 
                 std::string solutionResultToString(solvers::SolutionResult result) {
@@ -345,7 +345,6 @@ namespace drake {
                     return result_str;
                 }
                 
-                
                 Eigen::MatrixXd calculateEndEffectorTraj(Eigen::Ref<Eigen::MatrixXd> traj) {
                     // check input
                     assert(traj.rows() == num_states);
@@ -366,6 +365,29 @@ namespace drake {
                     std::cout << "ee_traj:\n" << ee_traj << std::endl;
                     return ee_traj;
                 }
+                
+                void printEndEffectorTraj(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj) {
+                    
+                    Eigen::MatrixXd ee_traj = calculateEndEffectorTraj(traj);
+                    
+                    // filename
+                    std::string traj_filename = output_folder + filename + "_ee_" + std::to_string(trial) + ".txt";
+                    
+                    // open output file
+                    output_file.open(traj_filename);
+                    if (!output_file.is_open()) {
+                        std::cerr << "Problem opening file at " << traj_filename << endl;
+                        return;
+                    }
+                    
+                    // write values to output file
+                    for (int i = 0; i < N; i++) {
+                        Eigen::VectorXd x = ee_traj.col(i);
+                        output_file << i * T/(N-1) << '\t' << x[0] << '\t' << x[1] << '\t' << x[2] << endl;
+                    }
+                    output_file.close();
+                }
+                
                 
                 Eigen::VectorXd solveOPT(drake::systems::RigidBodyPlant<double>* plant, solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, Eigen::Ref<Eigen::MatrixXd> warm_start_traj) {
                     
@@ -439,6 +461,7 @@ namespace drake {
                     writeStateToFile(solver_name, trial, xtraj);
                     writeInputToFile(solver_name, trial, utraj);
                     writeHeaderFile(plant, solver_name, trial, xtraj, utraj, tolerance, elapsed_time.count(), solutionResultToString(result));
+                    printEndEffectorTraj(solver_name, trial, xtraj);
                     
                     Eigen::VectorXd opt_traj(N * (num_states + num_inputs));
                     Map<VectorXd> xtraj_reshape(xtraj.data(), xtraj.size());
@@ -537,6 +560,8 @@ namespace drake {
                     writeStateToFile(solver_name, trial, xtraj_admm);
                     writeInputToFile(solver_name, trial, utraj_admm);
                     writeHeaderFile(plant, solver_name, trial, xtraj_admm, utraj_admm, tolerance, elapsed_time.count(), solve_result);
+                    printEndEffectorTraj(solver_name, trial, xtraj_admm);
+                    
                     return xtraj_admm;
                 }
                 
@@ -577,7 +602,7 @@ namespace drake {
                     // solve with all methods
                     Eigen::MatrixXd admm_sol = solveADMM(rbplant, solver_admm, "admm", 1e-6, 0, "simple", zero_traj_admm);
                     Eigen::VectorXd ipopt_sol = solveOPT(rbplant, ipopt_solver, "ipopt", 1e-6, 0, "simple", zero_traj_opt);
-                    //Eigen::VectorXd snopt_sol = solveOPT(plant, snopt_solver, "snopt", 1e-6, trial, "simple", zero_traj_opt);
+                    Eigen::VectorXd snopt_sol = solveOPT(rbplant, snopt_solver, "snopt", 1e-6, 0, "simple", zero_traj_opt);
                     
                     delete solver_admm;
                     delete snopt_solver;
