@@ -85,7 +85,7 @@ namespace drake {
                 int num_obstacles = 1;
                 
                 // define time and number of points
-                int N = 30;
+                int N = 40;
                 double T = 4.0;
                 double dt = T/N;
                 
@@ -417,6 +417,9 @@ namespace drake {
                     traj_opt.AddLinearConstraint(traj_opt.initial_state() == x0);
                     traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     
+                    // obstacle constraint?
+                    traj_opt.AddTaskSpaceObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, *rbtree);
+                    
                     // initialize trajectory
                     auto traj_init_x = PiecewisePolynomial<double>::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), warm_start_traj);
                     traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
@@ -445,6 +448,7 @@ namespace drake {
                     // solve and time solution
                     std::chrono::system_clock::time_point start_time = std::chrono::system_clock::now();
                     solvers::SolutionResult result = solver->Solve(traj_opt);
+                    //solvers::SolutionResult result = solvers::SolutionResult::kUnknownError;
                     std::chrono::system_clock::time_point end_time = std::chrono::system_clock::now();
                     
                     std::chrono::duration<double> elapsed_time = (end_time - start_time);
@@ -600,9 +604,9 @@ namespace drake {
                     KinematicsCache<double> cache = rbtree->doKinematics(q, v);
                     
                     // solve with all methods
-                    Eigen::MatrixXd admm_sol = solveADMM(rbplant, solver_admm, "admm", 1e-6, 0, "simple", zero_traj_admm);
+                    //Eigen::MatrixXd admm_sol = solveADMM(rbplant, solver_admm, "admm", 1e-6, 0, "simple", zero_traj_admm);
                     Eigen::VectorXd ipopt_sol = solveOPT(rbplant, ipopt_solver, "ipopt", 1e-6, 0, "simple", zero_traj_opt);
-                    Eigen::VectorXd snopt_sol = solveOPT(rbplant, snopt_solver, "snopt", 1e-6, 0, "simple", zero_traj_opt);
+                    //Eigen::VectorXd snopt_sol = solveOPT(rbplant, snopt_solver, "snopt", 1e-6, 0, "simple", zero_traj_opt);
                     
                     delete solver_admm;
                     delete snopt_solver;

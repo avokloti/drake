@@ -418,12 +418,18 @@ namespace drake {
                 obstacle_radii_x_ = obstacle_radii_x;
                 obstacle_radii_y_ = obstacle_radii_y;
                 rbtree_ = rbtree.Clone();
+                
+                std::cout << obstacle_center_x_ << std::endl;
+                std::cout << obstacle_center_y_ << std::endl;
+                std::cout << obstacle_radii_x_ << std::endl;
+                std::cout << obstacle_radii_y_ << std::endl;
             }
             
             void TaskSpaceObstacleConstraint::DoEval(const Eigen::Ref<const Eigen::VectorXd>& x, Eigen::VectorXd* y) const {
                 AutoDiffVecXd y_t;
                 Eval(math::initializeAutoDiff(x), &y_t);
                 *y = math::autoDiffToValueMatrix(y_t);
+                std::cout << "TaskSpaceObstacleConstraint::DoEval" << std::endl;
             }
             
             // NEED TO RESOLVE KINEMATICS CACHE ISSUE
@@ -453,6 +459,10 @@ namespace drake {
                 for (int i = 0; i < num_obstacles_; i++) {
                     (*y)(i) = 1 - (obstacle_center_x_[i] - ee(0)) * (obstacle_center_x_[i] - ee(0))/(obstacle_radii_x_[i] * obstacle_radii_x_[i]) - (obstacle_center_y_[i] - ee(1)) * (obstacle_center_y_[i] - ee(1))/(obstacle_radii_y_[i] * obstacle_radii_y_[i]);
                 } */
+                std::cout << "Task Space Obstacle Constraint Testing" << std::endl;
+                //for (int i = 0; i < obstacle_radii_x_.size(); i++) {
+                //    (*y)(i) = 0;
+                //}
             }
             
             void TaskSpaceObstacleConstraint::DoEval(const Eigen::Ref<const VectorX<symbolic::Variable>>&,
@@ -464,8 +474,9 @@ namespace drake {
                                                                const Eigen::Ref<const VectorXDecisionVariable>& timestep,
                                                                const Eigen::Ref<const VectorXDecisionVariable>& state,
                                                                MathematicalProgram* prog) {
-                //DRAKE_DEMAND(timestep.size() == 1);
+                DRAKE_DEMAND(timestep.size() == 1);
                 DRAKE_DEMAND(state.size() == constraint->num_states());
+                std::cout << "AddTaskSpaceObstacleConstraint" << std::endl;
                 return prog->AddConstraint(constraint, {timestep, state});
             }
             

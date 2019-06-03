@@ -50,6 +50,7 @@ num_trials = 1
 solvers = ["admm", "snopt", "ipopt"]
 dir = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/obstacles/";
 solver_names = ["ADMM", "SNOPT", "IPOPT"]
+styles = ['-', '--', ':']
 colors = ['maroon', 'green', 'blue']
 
 # read data from headers
@@ -60,17 +61,17 @@ ees = list(map(readEndEffectorFile, ee_trajs))
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 for s in np.arange(len(solvers)):
-    ax.plot(ees[s][1][:, 0], ees[s][1][:, 1], ees[s][1][:, 2], color = colors[s], label = solver_names[s], marker='o', markersize=5)
+    ax.plot(ees[s][1][:, 0], ees[s][1][:, 1], ees[s][1][:, 2], color = colors[s], label = solver_names[s], marker='o', linestyle=styles[s], markersize=5)
 
 #for obs in np.arange(len(obstacle_output[0])):
 #[xx, yy, zz] = cylinder(obstacle_output[0][obs], obstacle_output[1][obs], -6, 6, obstacle_output[2][obs], obstacle_output[3][obs])
 #ax.plot_surface(xx, yy, zz)
-plt.title("Trajectories for Trial " + str(index))
+plt.title("Trajectories for Trial " + str(0))
 ax.legend()
 plt.show()
 
 
-
+"""
 
 # read headers later
 header_output = list(map(readHeaderFile, headers))
@@ -118,3 +119,5 @@ for i in np.arange(num_problems):
 successes_sum = np.sum(successes, axis=1)
 
 ## -------------------- PLOTTING -------------------- ##
+
+"""

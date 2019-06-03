@@ -17,6 +17,8 @@
 #include "drake/solvers/ipopt_solver.h"
 #include "drake/solvers/snopt_solver.h"
 
+#define OBS 1
+
 namespace drake {
     namespace examples {
         namespace quadrotor {
@@ -56,11 +58,37 @@ namespace drake {
                 Eigen::VectorXd input_upper_bound(num_inputs);
                 Eigen::VectorXd input_lower_bound(num_inputs);
                 
+                // arrays related to obstacles
+                int num_obstacles = 4;
+                int num_alpha = 10;
+                Eigen::VectorXd obstacle_center_x(num_obstacles);
+                Eigen::VectorXd obstacle_center_y(num_obstacles);
+                Eigen::VectorXd obstacle_radii_x(num_obstacles);
+                Eigen::VectorXd obstacle_radii_y(num_obstacles);
+                
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt/";
+                std::string output_folder;
                 
                 //=============================================================================//
+                
+                
+                /* WRITE OBSTACLES TO FILE */
+                int writeObstaclesToFile(int trial) {
+                    // write obstacles to file
+                    ofstream output_obs;
+                    output_obs.open(output_folder + "obstacles" + std::to_string(trial) + ".txt");
+                    if (!output_obs.is_open()) {
+                        cerr << "Problem opening obstacle output file.\n";
+                    }
+                    output_obs << obstacle_center_x.transpose() << endl;
+                    output_obs << obstacle_center_y.transpose() << endl;
+                    output_obs << obstacle_radii_x.transpose() << endl;
+                    output_obs << obstacle_radii_y.transpose() << endl;
+                    output_obs.close();
+                    
+                    return 0;
+                }
                 
                 /* WRITE STATE TO FILE */
                 int writeStateToFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj) {
@@ -177,48 +205,46 @@ namespace drake {
                     output_file << error_vector.lpNorm<Infinity>() << endl;
                     
                     // calculate obstacle avoidance error, combined with state and input bound error
-                    //Eigen::VectorXd obstacle_error = Eigen::VectorXd::Zero(N * num_obstacles);
+                    Eigen::VectorXd obstacle_error = Eigen::VectorXd::Zero(N * num_obstacles);
                     Eigen::VectorXd bounds_error = Eigen::VectorXd::Zero(2 * N * (num_states + num_inputs));
                     
                     for (int i = 0; i < N; i++) {
                         // error from obstacles
-                        /*
                         for (int j = 0; j < num_obstacles; j++) {
                             obstacle_error[num_obstacles * i + j] = 1 - (obstacle_center_x[j] - traj_x(0, i)) * (obstacle_center_x[j] - traj_x(0, i))/(obstacle_radii_x[j] * obstacle_radii_x[j]) - (obstacle_center_y[j] - traj_x(1, i)) * (obstacle_center_y[j] - traj_x(1, i))/(obstacle_radii_y[j] * obstacle_radii_y[j]);
                             obstacle_error[num_obstacles * i + j] = std::max(obstacle_error[num_obstacles * i + j], 0.0);
                             if (obstacle_error[num_obstacles * i + j] > 0) {
                                 std::cout << "Collision of point " << i << " with obstacle " << j << std::endl;
                             }
-                        } */
-                            // error from state bounds
-                            for (int j = 0; j < num_states; j++) {
-                                int start_index = 2 * (i * num_states + j);
-                                bounds_error[start_index] = std::max(traj_x(j, i) - state_upper_bound[j], 0.0);
-                                bounds_error[start_index + 1] = std::max(state_lower_bound[j] - traj_x(j, i), 0.0);
-                                if (bounds_error[start_index] > feas_tolerance) {
-                                    std::cout << "Point " << i << " at state " << j << " violates state upper bound, by: " << bounds_error[start_index] << std::endl;
-                                }
-                                if (bounds_error[start_index+1] > feas_tolerance) {
-                                    std::cout << "Point " << i << " at state " << j << " violates state lower bound, by: " << bounds_error[start_index+1] << std::endl;
-                                }
+                        }
+                        // error from state bounds
+                        for (int j = 0; j < num_states; j++) {
+                            int start_index = 2 * (i * num_states + j);
+                            bounds_error[start_index] = std::max(traj_x(j, i) - state_upper_bound[j], 0.0);
+                            bounds_error[start_index + 1] = std::max(state_lower_bound[j] - traj_x(j, i), 0.0);
+                            if (bounds_error[start_index] > feas_tolerance) {
+                                std::cout << "Point " << i << " at state " << j << " violates state upper bound, by: " << bounds_error[start_index] << std::endl;
                             }
-                            for (int j = 0; j < num_inputs; j++) {
-                                int start_index = 2 * N * num_states + 2 * (i * num_inputs + j);
-                                bounds_error[start_index] = std::max(traj_u(j, i) - input_upper_bound[j], 0.0);
-                                bounds_error[start_index + 1] = std::max(input_lower_bound[j] - traj_u(j, i), 0.0);
-                                
-                                if (bounds_error[start_index] > feas_tolerance) {
-                                    std::cout << "Point " << i << " at input " << j << " violates input upper bound, by: " << bounds_error[start_index] << std::endl;
-                                }
-                                if (bounds_error[start_index+1] > feas_tolerance) {
-                                    std::cout << "Point " << i << " at input " << j << " violates input lower bound, by: " << bounds_error[start_index+1] << std::endl;
-                                }
+                            if (bounds_error[start_index+1] > feas_tolerance) {
+                                std::cout << "Point " << i << " at state " << j << " violates state lower bound, by: " << bounds_error[start_index+1] << std::endl;
                             }
                         }
+                        for (int j = 0; j < num_inputs; j++) {
+                            int start_index = 2 * N * num_states + 2 * (i * num_inputs + j);
+                            bounds_error[start_index] = std::max(traj_u(j, i) - input_upper_bound[j], 0.0);
+                            bounds_error[start_index + 1] = std::max(input_lower_bound[j] - traj_u(j, i), 0.0);
+                            
+                            if (bounds_error[start_index] > feas_tolerance) {
+                                std::cout << "Point " << i << " at input " << j << " violates input upper bound, by: " << bounds_error[start_index] << std::endl;
+                            }
+                            if (bounds_error[start_index+1] > feas_tolerance) {
+                                std::cout << "Point " << i << " at input " << j << " violates input lower bound, by: " << bounds_error[start_index+1] << std::endl;
+                            }
+                        }
+                    }
                     
                     // calculate norms and write to file
-                    //Eigen::VectorXd constraint_error(N * (num_obstacles + 2 * num_states + 2 * num_inputs)); constraint_error << obstacle_error, bounds_error;
-                    Eigen::VectorXd constraint_error = bounds_error;
+                    Eigen::VectorXd constraint_error(N * (num_obstacles + 2 * num_states + 2 * num_inputs)); constraint_error << obstacle_error, bounds_error;
                     
                     // append to the end of the output file
                     output_file << constraint_error.lpNorm<2>() << endl;
@@ -259,7 +285,7 @@ namespace drake {
                 } */
                 
                 
-                /* INTERPOLATED OBSTACLE CONSTRAINTS
+                /* INTERPOLATED OBSTACLE CONSTRAINTS */
                 void interpolatedObstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x1, Eigen::Ref<Eigen::VectorXd> u1, Eigen::Ref<Eigen::VectorXd> x2, Eigen::Ref<Eigen::VectorXd> u2, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x1, Eigen::Ref<Eigen::MatrixXd> dg_u1, Eigen::Ref<Eigen::MatrixXd> dg_x2, Eigen::Ref<Eigen::MatrixXd> dg_u2) {
                     
                     //std::cout << "In interpolated obs con" << std::endl;
@@ -287,7 +313,7 @@ namespace drake {
                             dg_x2(index, 1) = -2 * alpha[ii] * ((1 - alpha[ii]) * x1[1] + alpha[ii] * x2[1] - obstacle_center_y[i])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
                         }
                     }
-                } */
+                }
                 
                 std::string solutionResultToString(solvers::SolutionResult result) {
                     std::string result_str;
@@ -334,6 +360,10 @@ namespace drake {
                     
                     traj_opt.AddRunningCost(u.dot(R * u) + (x - xf).dot(Q * (x - xf)));
                     traj_opt.AddFinalCost((x - xf).dot(Qf * (x - xf)));
+                    
+                    if (OBS) {
+                        traj_opt.AddInterpolatedObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, num_alpha);
+                    }
                     
                     // create initial trajectories
                     Eigen::VectorXd initial_traj_x = initial_traj.segment(0, N * num_states);
@@ -417,7 +447,9 @@ namespace drake {
                     solver->setRho3(rho3);
                     
                     // add obstacle constraints
-                    //solver->addInequalityConstraintToAllKnotPoints(obstacleConstraints, num_obstacles, "obstacle constraints");
+                    if (OBS) {
+                        solver->addInequalityConstraintToConsecutiveKnotPoints(interpolatedObstacleConstraints, num_obstacles * num_alpha, "interpolated obstacle constraints");
+                    }
                     
                     // construct cost vectors
                     Eigen::VectorXd temp_q = -Q.transpose() * xf - Q * xf;
@@ -474,16 +506,50 @@ namespace drake {
                     return traj;
                 }
                 
-                int do_main(int argc, char* argv[]) {
+                void initializeValues(int trial) {
                     // state and input bounds
                     state_upper_bound << 20, 20, 20, 20, 0.2, 20, 20, 20, 20, 20, 20, 20;
                     state_lower_bound << -20, -20, -20, -20, -0.2, -20, -20, -20, -20, -20, -20, -20;
                     input_upper_bound << 10, 10, 10, 10;
                     input_lower_bound << 0, 0, 0, 0;
                     
-                    // x0 and xf
-                    x0 << 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-                    xf << 6, 6, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    // random number generator
+                    std::default_random_engine generator(trial);
+                    
+                    // define random value generators for start and end points
+                    std::uniform_real_distribution<double> unif_dist(0, 1.0);
+                    
+                    if (OBS) {
+                        // fix start/end locations
+                        x0 << 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                        xf << 6, 6, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                        
+                        // fill in obstacle positions and sizes
+                        for (int ns = 0; ns < num_obstacles; ns++) {
+                            obstacle_center_x[ns] = unif_dist(generator) * 4 + 1;
+                            obstacle_center_y[ns] = unif_dist(generator) * 4 + 1;
+                            obstacle_radii_x[ns] = unif_dist(generator) + 0.2;
+                            obstacle_radii_y[ns] = unif_dist(generator) + 0.2;
+                        }
+                        
+                        // set output folder
+                        output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles/";
+                        
+                        writeObstaclesToFile(trial);
+                        
+                    } else {
+                        // fill in random x0 and xf within state bounds
+                        for (int ns = 0; ns < num_states/2; ns++) {
+                            x0[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
+                            xf[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
+                        }
+                        
+                        // set output folder
+                        output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_more/";
+                    }
+                }
+                
+                int do_main(int argc, char* argv[]) {
                     
                     // initial trajectory
                     Eigen::VectorXd zero_traj = Eigen::VectorXd::Zero(N * (num_states + num_inputs));
@@ -492,14 +558,17 @@ namespace drake {
                     int num_trials = 10;
                     
                     // tolerances
-                    std::vector<double> opt_tolerances {1e-1, 1e-2, 1e-3};
+                    std::vector<double> opt_tolerances {0.1, 0.01, 0.001};
                     std::vector<double> feas_tolerances {1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9};
                     
                     // solve
-                    for (int i = 0; i < int(opt_tolerances.size()); i++) {
-                        for (int j = 0; j < int(feas_tolerances.size()); j++) {
-                            for (int trial = 0; trial < num_trials; trial++) {
-                                int index = i * feas_tolerances.size() * num_trials + j * num_trials + trial;
+                    for (int trial = 0; trial < num_trials; trial++) {
+                        // make new randomized instance
+                        initializeValues(trial);
+                        
+                        for (int i = 0; i < int(opt_tolerances.size()); i++) {
+                            for (int j = 0; j < int(feas_tolerances.size()); j++) {
+                                int index = trial * feas_tolerances.size() * opt_tolerances.size() + i * feas_tolerances.size() + j;
                                 
                                 // tolerances
                                 double opt_tolerance = opt_tolerances.at(i);
