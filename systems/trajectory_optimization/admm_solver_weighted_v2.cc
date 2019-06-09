@@ -85,7 +85,8 @@ namespace drake {
                     Eigen::VectorXd mid_input(num_inputs);
                     Eigen::VectorXd temp;
                     Eigen::VectorXd feasibilityVector = Eigen::VectorXd::Zero((N+1) * num_states);
-                    Eigen::VectorXd constraintVector = Eigen::VectorXd::Zero((N+1) * num_states);
+                    //Eigen::VectorXd constraintVector = Eigen::VectorXd::Zero((N+1) * num_states);
+                    Eigen::VectorXd constraintVector = Eigen::VectorXd::Zero(N * num_constraints);
                     double objective;
                     double oldObjective;
                     double feasibilityNorm;

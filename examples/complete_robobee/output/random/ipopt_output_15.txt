@@ -1,0 +1,33 @@
+Total number of variables............................:      640
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:      640
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:      530
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+In iteration 38, 1 Slack too small, adjusting variable bound
+
+Number of Iterations....: 58
+
+                                   (scaled)                 (unscaled)
+Objective...............:   1.1506877532294981e+01    1.1506877532294981e+01
+Dual infeasibility......:   1.9317666126709252e-04    1.9317666126709252e-04
+Constraint violation....:   5.5065199134826659e-07    5.5065199134826659e-07
+Complementarity.........:   2.1318208653017665e-09    2.1318208653017665e-09
+Overall NLP error.......:   1.9317666126709252e-04    1.9317666126709252e-04
+
+
+Number of objective function evaluations             = 87
+Number of objective gradient evaluations             = 59
+Number of equality constraint evaluations            = 87
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 59
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 0
+Total CPU secs in IPOPT (w/o function evaluations)   =      0.216
+Total CPU secs in NLP function evaluations           =      0.481
+
+EXIT: Optimal Solution Found.

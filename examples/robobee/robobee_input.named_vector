@@ -1,0 +1,28 @@
+namespace: "drake::examples::robobee"
+
+element {
+    name: "F_t"
+    doc: "thrust"
+    doc_units: "N"
+    default_value: "0.0"
+}
+element {
+    name: "tau_alpha"
+    doc: "Torque about x-axis."
+    doc_units: "N m? N mm?"
+    default_value: "0.0"
+}
+element {
+    name: "tau_beta"
+    doc: "Torque about y-axis."
+    doc_units: "N m? N mm?"
+    default_value: "0.0"
+}
+element {
+    name: "tau_gamma"
+    doc: "Torque about z-axis."
+    doc_units: "N m? N mm?"
+    default_value: "0.0"
+}
+
+

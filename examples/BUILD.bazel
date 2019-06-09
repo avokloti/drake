@@ -53,6 +53,8 @@ INSTALLED_MODEL_PACKAGES = [
     "//examples/simple_four_bar",
     "//examples/valkyrie",
     "//examples/zmp",
+    "//examples/robobee",
+    "//examples/complete_robobee",
 ]
 
 filegroup(

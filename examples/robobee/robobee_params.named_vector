@@ -1,0 +1,103 @@
+namespace: "drake::examples::robobee"
+
+element {
+    name: "g"
+    doc: "Gravity constant."
+    doc_units: "m/s^2"
+    default_value: "9.81"
+    min_value: "9.81"
+}
+element {
+    name: "m"
+    doc: "Mass of Robobee."
+    doc_units: "kg"
+    default_value: "8.7e-5"
+    min_value: "8.7e-5"
+}
+element {
+    name: "I_alpha"
+    doc: "Inertia around x-axis."
+    doc_units: "kg m^2"
+    default_value: "2.45e-12"
+    min_value: "2.45e-12"
+}
+element {
+    name: "I_beta"
+    doc: "Inertia around y-axis."
+    doc_units: "kg m^2"
+    default_value: "1.34e-12"
+    min_value: "1.34e-12"
+}
+element {
+    name: "I_gamma"
+    doc: "Inertia around z-axis."
+    doc_units: "kg m^2"
+    default_value: "102.2e-12"
+    min_value: "102.2e-12"
+}
+element {
+    name: "r_cp"
+    doc: ""
+    doc_units: "m"
+    default_value: "0.0136"
+    min_value: "0.0136"
+}
+element {
+    name: "rho"
+    doc: "ambient air density"
+    doc_units: "kg/m^3"
+    default_value: "1.2041"
+    min_value: "1.2041"
+}
+
+element {
+    name: "B"
+    doc: "wing geometry parameter"
+    doc_units: "unitless"
+    default_value: "2.0933e-9"
+    min_value: "0"
+}
+element {
+    name: "Cl"
+    doc: "lift coefficient"
+    doc_units: "?"
+    default_value: "1.8"
+    min_value: "0"
+}
+element {
+    name: "kappa"
+    doc: "split-cycle parameter (set to 1/2 to make tau_gamma = 0)"
+    doc_units: ""
+    default_value: "0.5"
+    min_value: "0.5"
+}
+element {
+    name: "A"
+    doc: "transfer function numerator coefficient"
+    doc_units: ""
+    default_value: "151.4*0.0063"
+    min_value: "151.4*0.0063"
+}
+element {
+    name: "m_eq"
+    doc: "transfer function characteristic polynomial coefficient"
+    doc_units: "kg"
+    default_value: "3.82e-4"
+    min_value: "3.82e-4"
+}
+element {
+    name: "b_eq"
+    doc: "transfer function characteristic polynomial coefficient"
+    doc_units: "Ns/m"
+    default_value: "0.1959"
+    min_value: "0.1959"
+}
+element {
+    name: "k_eq"
+    doc: "transfer function characteristic polynomial coefficient"
+    doc_units: "N/m"
+    default_value: "500.4331"
+    min_value: "500.4331"
+}
+
+
