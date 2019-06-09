@@ -39,9 +39,9 @@ namespace drake {
                 double dt = T/N;
                 
                 // set rho parameters
-                double rho1 = 1;
-                double rho2 = 2000;
-                double rho3 = 2000;
+                double rho1;
+                double rho2;
+                double rho3;
                 
                 // initial and final states
                 Eigen::VectorXd x0(num_states);
@@ -389,7 +389,7 @@ namespace drake {
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "file_print_level", 4);
                         traj_opt.SetSolverOption(solvers::IpoptSolver::id(), "output_file", print_file);
                     } else if (solver_name.find("snopt") != std::string::npos) {
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
+                        //traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 1);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", feas_tolerance * 0.05);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", opt_tolerance);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 200000);
@@ -428,7 +428,7 @@ namespace drake {
                 /* SOLVE ADMM WITH OBSTACLES */
                 Eigen::VectorXd solveADMM(systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double feas_tolerance, double opt_tolerance, int trial, Eigen::Ref<Eigen::VectorXd> initial_traj) {
                     
-                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": rho0 = " << rho1 << ", rho1 = " << rho2 << ", rho3 = " << rho3 << "!\n" << std::endl;
+                    std::cout << "\n=============== Solving problem " << trial << " with " << solver_name << ": opt tol = " << opt_tolerance << ", feas tol = " << feas_tolerance << "!\n" << std::endl;
                     
                     // initialize to given trajectory
                     Eigen::VectorXd y(initial_traj);
@@ -440,6 +440,7 @@ namespace drake {
                     solver->setConstraintTolerance(feas_tolerance);
                     solver->setObjectiveTolerance(opt_tolerance);
                     solver->setStartAndEndState(x0, xf);
+                    solver->setMaxIterations(8000);
                     
                     // set RHOS
                     solver->setRho1(rho1);
@@ -508,18 +509,22 @@ namespace drake {
                 
                 void initializeValues(int trial) {
                     // state and input bounds
-                    state_upper_bound << 20, 20, 20, 20, 0.2, 20, 20, 20, 20, 20, 20, 20;
-                    state_lower_bound << -20, -20, -20, -20, -0.2, -20, -20, -20, -20, -20, -20, -20;
+                    state_upper_bound << 7, 7, 20, 20, 0.2, 20, 20, 20, 20, 20, 20, 20;
+                    state_lower_bound << -1, -1, -20, -20, -0.2, -20, -20, -20, -20, -20, -20, -20;
                     input_upper_bound << 10, 10, 10, 10;
                     input_lower_bound << 0, 0, 0, 0;
                     
                     // random number generator
-                    std::default_random_engine generator(trial);
+                    std::default_random_engine generator(trial + 1);
                     
                     // define random value generators for start and end points
                     std::uniform_real_distribution<double> unif_dist(0, 1.0);
                     
                     if (OBS) {
+                        rho1 = 1;
+                        rho2 = 100;
+                        rho3 = 100;
+                        
                         // fix start/end locations
                         x0 << 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0;
                         xf << 6, 6, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0;
@@ -533,11 +538,15 @@ namespace drake {
                         }
                         
                         // set output folder
-                        output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles/";
+                        output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles_lower_rhos/";
                         
                         writeObstaclesToFile(trial);
                         
                     } else {
+                        rho1 = 1;
+                        rho2 = 100;
+                        rho3 = 100;
+                        
                         // fill in random x0 and xf within state bounds
                         for (int ns = 0; ns < num_states/2; ns++) {
                             x0[ns] = unif_dist(generator) * (state_upper_bound[ns] - state_lower_bound[ns]) + state_lower_bound[ns];
@@ -545,7 +554,7 @@ namespace drake {
                         }
                         
                         // set output folder
-                        output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_more/";
+                        output_folder = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_lower_rhos/";
                     }
                 }
                 

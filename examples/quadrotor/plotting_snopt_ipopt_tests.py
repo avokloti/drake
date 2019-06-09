@@ -45,7 +45,7 @@ def processDataMeans(entry_index):
     return data, data_means, data_stds
 
 
-dir = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles/"
+dir = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles_lower_rhos/"
 #dir = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_more2/"
 
 # solvers / colors
@@ -57,7 +57,7 @@ colors = ['maroon', 'blue', 'green']
 num_solvers = len(solvers)
 num_feas_tols = 6
 num_opt_tols = 3
-num_trials = 7
+num_trials = 10
 #num_feas_tols = 6
 #num_opt_tols = 3
 #num_trials = 10
@@ -134,9 +134,7 @@ plt.xticks(np.arange(num_feas_tols), feas_tols_list)
 plt.title('Objectives for Solvers Across Tolerances')
 plt.xlabel('Constraint Tolerance Value')
 plt.ylabel('Objective')
-plt.legend()
 
-plt.legend()
 plt.tight_layout()
 
 
@@ -150,7 +148,6 @@ for s in np.arange(num_solvers):
     plt.title('Other Constraint Error Across Tolerances')
     plt.xlabel('Other Constraint Tolerance Value')
     plt.ylabel('Error (inf-norm)')
-    plt.legend()
 
 plt.subplot(2, 1, 2)
 for s in np.arange(num_solvers):
@@ -160,7 +157,8 @@ for s in np.arange(num_solvers):
     plt.title('Dynamics Error Across Tolerances')
     plt.xlabel('Dynamics Tolerance Value')
     plt.ylabel('Error (inf-norm)')
-    plt.legend()
+
+plt.legend(loc='right')
 
 plt.tight_layout()
 plt.show()

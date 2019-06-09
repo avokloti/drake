@@ -285,10 +285,10 @@ namespace drake {
             /* INTERPOLATED OBSTACLE AVOIDANCE CONSTRAINT METHODS */
             InterpolatedObstacleConstraint::InterpolatedObstacleConstraint(int num_states, int num_inputs, Eigen::Ref<Eigen::VectorXd> obstacle_center_x, Eigen::Ref<Eigen::VectorXd> obstacle_center_y, Eigen::Ref<Eigen::VectorXd> obstacle_radii_x, Eigen::Ref<Eigen::VectorXd> obstacle_radii_y, int num_alpha): Constraint(num_alpha * obstacle_radii_x.size(), 1 + (2 * num_states) + (2 * num_inputs), -100000 * Eigen::VectorXd::Ones(obstacle_radii_x.size() * num_alpha), Eigen::VectorXd::Zero(obstacle_radii_x.size() * num_alpha)) {
                 
-                std::cout << "num states: " << num_states << std::endl;
-                std::cout << "num inputs: " << num_inputs << std::endl;
-                std::cout << "num alpha: " << num_alpha << std::endl;
-                std::cout << "constraint size: " << num_alpha * obstacle_radii_x.size() << std::endl;
+                //std::cout << "num states: " << num_states << std::endl;
+                //std::cout << "num inputs: " << num_inputs << std::endl;
+                //std::cout << "num alpha: " << num_alpha << std::endl;
+                //std::cout << "constraint size: " << num_alpha * obstacle_radii_x.size() << std::endl;
                 
                 num_states_ = num_states;
                 num_inputs_ = num_inputs;
