@@ -22,7 +22,7 @@ def readHeaderFile(filename):
     return [N, T, x0, xf, time, feas2norm, feasinfnorm, constraint2norm, constraintinfnorm, objective, solve_result]
 
 # directory/solver names
-dir = "/Users/ira/Documents/drake/examples/robobee/output/random/"
+dir = "/Users/ira/Documents/drake/examples/robobee/output/basic/"
 solvers = ["admm", "snopt", "ipopt"]
 colors = ["forestgreen", "orange", "blue"]
 states_labels = ['X-position (m)', 'Y-position (m)', 'Z-position (m)', 'Roll Angle (rad)', 'Pitch Angle (rad)', 'Yaw angle (rad)']

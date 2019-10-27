@@ -90,7 +90,7 @@ def processDataMeans(entry_index):
 
 
 #dir = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles/"
-dir = "/Users/ira/Documents/drake/examples/quadrotor/output/snopt_ipopt_obstacles_lower_rhos/"
+dir = "/Users/ira/Documents/drake/examples/quadrotor/output/alg_compare_obstacles/"
 
 # solvers / colors
 solvers = ["admm", "snopt", "ipopt"]
@@ -191,7 +191,7 @@ plt.ylabel('Objective')
 plt.subplot(2, 2, 2)
 for s in np.arange(num_solvers):
     for ot in np.arange(num_opt_tols):
-        plt.plot(np.arange(num_feas_tols), np.log10(constraints[s, ot, :]), color = colors[s], label = str(solvers[s]) + ': ' + str(opt_tols_list[ot]), ls=lines[ot])
+        plt.plot(np.arange(num_feas_tols), constraints[s, ot, :], color = colors[s], label = str(solvers[s]) + ': ' + str(opt_tols_list[ot]), ls=lines[ot])
     plt.xticks(np.arange(num_feas_tols), feas_tols_list)
     plt.title('Other Constraint Error Across Tolerances')
     plt.xlabel('Other Constraint Tolerance Value')
@@ -329,10 +329,6 @@ def drawAnimation3D():
         for obs in np.arange(len(obstacle_output[0])):
             [xx, yy, zz] = cylinder(obstacle_output[0][obs], obstacle_output[1][obs], -6, 6, obstacle_output[2][obs], obstacle_output[3][obs])
             ax.plot_surface(xx, yy, zz)
-    else:
-        ax.set_xlim3d([-20.0, 20.0])
-        ax.set_ylim3d([-20.0, 20.0])
-        ax.set_zlim3d([-20.0, 20.0])
     
     line = ax.plot(x[:, 0], x[:, 1], x[:, 2], c=colors[0])
     ax.plot(snopt_traj[:, 1], snopt_traj[:, 2], snopt_traj[:, 3], c=colors[1])
@@ -380,9 +376,58 @@ def drawAnimation2D():
     line_ani = animation.FuncAnimation(fig, update_lines, len(traj), fargs=line, interval=500, blit=False)
     plt.show()
 
+
+def drawFinal2D():
+    # Attaching 3D axis to the figure
+    fig = plt.figure()
+    ax = plt.gca()
+    x, u = y2xu(traj[-1])
+    
+    if obs_flag:
+        for obs in np.arange(len(obstacle_output[0])):
+            ell = Ellipse((obstacle_output[0][obs], obstacle_output[1][obs]), 2 * obstacle_output[2][obs], 2 * obstacle_output[3][obs])
+            ax.add_artist(ell)
+            ell.set_alpha(0.8)
+            ell.set_facecolor('grey')
+    
+    line = ax.plot(x[:, 0], x[:, 1], c=colors[0])
+    ax.plot(snopt_traj[:, 1], snopt_traj[:, 2], c=colors[1])
+    ax.plot(ipopt_traj[:, 1], ipopt_traj[:, 2], c=colors[2])
+    # Setting the axes properties
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    #ax.set_title('2D Test')
+    # Creating the Animation object
+    plt.show()
+
+def drawFinal3D():
+    # Attaching 3D axis to the figure
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    x, u = y2xu(traj[-1])
+    
+    if (obs_flag):
+        ax.set_xlim3d([-1.0, 6.0])
+        ax.set_ylim3d([-1.0, 6.0])
+        ax.set_zlim3d([-2.0, 2.0])
+        for obs in np.arange(len(obstacle_output[0])):
+            [xx, yy, zz] = cylinder(obstacle_output[0][obs], obstacle_output[1][obs], -6, 6, obstacle_output[2][obs], obstacle_output[3][obs])
+            ax.plot_surface(xx, yy, zz)
+    
+    line = ax.plot(x[:, 0], x[:, 1], x[:, 2], c=colors[0])
+    ax.plot(snopt_traj[:, 1], snopt_traj[:, 2], snopt_traj[:, 3], c=colors[1])
+    ax.plot(ipopt_traj[:, 1], ipopt_traj[:, 2], ipopt_traj[:, 3], c=colors[2])
+    # Setting the axes properties
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
+
+
+drawFinal2D()
+drawFinal3D()
 drawAnimation2D()
 drawAnimation3D()
-
 
 
 """

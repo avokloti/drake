@@ -119,6 +119,7 @@ namespace drake {
                     bool final_state_flag;
                     Eigen::MatrixXd solution_x;
                     Eigen::MatrixXd solution_u;
+                    Eigen::VectorXd solution_y;
                     int num_latest_iterations;
                     
                     std::string output_file; // for output information / iterations
@@ -166,6 +167,7 @@ namespace drake {
                     trajectories::PiecewisePolynomial<double> reconstructInputTrajectory();
                     Eigen::MatrixXd getSolutionStateTrajectory();
                     Eigen::MatrixXd getSolutionInputTrajectory();
+                    Eigen::MatrixXd getSolutionVector();
                     int getNumLatestIterations();
                     
                     void setCostMatrices(Eigen::MatrixXd Q, Eigen::MatrixXd R);

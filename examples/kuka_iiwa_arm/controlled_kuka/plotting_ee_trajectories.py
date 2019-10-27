@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
@@ -25,6 +26,24 @@ def readHeaderFile(filename):
     solve_result = content[15].strip()
     return [N, T, x0, xf, rho0, rho1, rho2, iterations, time, feas2norm, feasinfnorm, constraint2norm, constraintinfnorm, objective, solve_result]
 
+def readObstacleFile(filename):
+    with open(filename) as f:
+        content = f.readlines()
+    xpos = np.array(content[0].strip().split()).astype('float')
+    ypos = np.array(content[1].strip().split()).astype('float')
+    rx = np.array(content[2].strip().split()).astype('float')
+    ry = np.array(content[3].strip().split()).astype('float')
+    return [xpos, ypos, rx, ry]
+
+def cylinder(x0, y0, zmin, zmax, rx, ry):
+    z_res = 5
+    theta_res = 100
+    theta = np.linspace(0, 2 * np.pi, theta_res)
+    xx = np.reshape(np.tile(rx * np.cos(theta) + x0, z_res), [z_res, theta_res]);
+    yy = np.reshape(np.tile(ry * np.sin(theta) + y0, z_res), [z_res, theta_res]);
+    zz = np.reshape(np.repeat(np.linspace(zmin, zmax, z_res), theta_res), [z_res, theta_res]);
+    return [xx, yy, zz]
+
 
 def readEndEffectorFile(filename):
     with open(filename) as f:
@@ -44,17 +63,24 @@ def readEndEffectorFile(filename):
 ## --- Main part of script --- ##
 
 
-num_trials = 1
+#obstacle_output = [[], [], [], []]
+obstacle_output = np.asarray([[-0.2], [0.05], [0.15], [0.1]])
+
+#num_trials = 1
+
+path = str(sys.argv[1])
+index = int(sys.argv[2])
 
 # set solver information
 solvers = ["admm", "snopt", "ipopt"]
-dir = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/obstacles/";
+dir = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/" + path;
 solver_names = ["ADMM", "SNOPT", "IPOPT"]
-styles = ['-', '--', ':']
+styles = ['-', '-', '-']
 colors = ['maroon', 'green', 'blue']
 
 # read data from headers
-ee_trajs = [dir + solver + "_ee_" + str(index) + ".txt" for index in np.arange(num_trials) for solver in solvers]
+#ee_trajs = [dir + solver + "_ee_" + str(index) + ".txt" for index in np.arange(num_trials) for solver in solvers]
+ee_trajs = [dir + solver + "_ee_" + str(index) + ".txt" for solver in solvers]
 ees = list(map(readEndEffectorFile, ee_trajs))
 
 # --- plot end effector trajectories in 3d --- #
@@ -63,12 +89,21 @@ ax = fig.gca(projection='3d')
 for s in np.arange(len(solvers)):
     ax.plot(ees[s][1][:, 0], ees[s][1][:, 1], ees[s][1][:, 2], color = colors[s], label = solver_names[s], marker='o', linestyle=styles[s], markersize=5)
 
-#for obs in np.arange(len(obstacle_output[0])):
-#[xx, yy, zz] = cylinder(obstacle_output[0][obs], obstacle_output[1][obs], -6, 6, obstacle_output[2][obs], obstacle_output[3][obs])
-#ax.plot_surface(xx, yy, zz)
-plt.title("Trajectories for Trial " + str(0))
+for obs in np.arange(len(obstacle_output[0])):
+    [xx, yy, zz] = cylinder(obstacle_output[0][obs], obstacle_output[1][obs], -6, 6, obstacle_output[2][obs], obstacle_output[3][obs])
+    ax.plot_surface(xx, yy, zz)
+
+plt.title("Trajectories for Trial " + str(index))
+ax.set_xlabel('x')
+ax.set_ylabel('y')
 ax.legend()
 plt.show()
+
+
+# to do...
+# run parameter sweep?
+# try out a few cases of admm with different parameters, see if something works
+
 
 
 """

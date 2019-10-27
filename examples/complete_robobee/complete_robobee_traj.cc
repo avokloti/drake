@@ -39,9 +39,9 @@ namespace drake {
                 double pi = 3.14159;
                 
                 // set rho parameters
-                double rho1 = 1;
-                double rho2 = 100;
-                double rho3 = 100;
+                double rho1 = 100;
+                double rho2 = 1e5;
+                double rho3 = 1e5;
                 
                 // initial and final states
                 Eigen::VectorXd x0(num_states);
@@ -60,7 +60,7 @@ namespace drake {
                 
                 // prepare output file writer and control input for dynamics integration!
                 ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/complete_robobee/output/random/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/complete_robobee/output/basic/";
                 
                 //=============================================================================//
                 
@@ -273,6 +273,19 @@ namespace drake {
                     systems::trajectory_optimization::MidpointTranscription traj_opt(plant, *context_ptr, N, T/N, T/N);
                     //systems::trajectory_optimization::DirectCollocation traj_opt(plant, *context_ptr, N, T/N, T/N);
                     
+                    // open file for writing trajectories
+                    ofstream x_stream;
+                    x_stream.open(output_folder + solver_name + "_traj_x_" + std::to_string(trial) + ".txt");
+                    if (!x_stream.is_open()) {
+                        std::cerr << "Problem opening trajectory x output file (in solveOPT).";
+                    }
+                    
+                    ofstream u_stream;
+                    u_stream.open(output_folder + solver_name + "_traj_u_" + std::to_string(trial) + ".txt");
+                    if (!u_stream.is_open()) {
+                        std::cerr << "Problem opening trajectory x output file (in solveOPT).";
+                    }
+                    
                     traj_opt.AddEqualTimeIntervalsConstraints();
                     
                     auto x = traj_opt.state();
@@ -289,6 +302,8 @@ namespace drake {
                     traj_opt.AddRunningCost(u.dot(R * u));
                     traj_opt.AddRunningCost((x - xf).dot(Q * (x - xf)));
                     //traj_opt.AddFinalCost((x - xf).dot(Qf * (x - xf)));
+                    
+                    traj_opt.AddPrintingConstraintToAllPoints(x_stream, u_stream);
                     
                     // initialize trajectory
                     const double timespan_init = T;
@@ -327,6 +342,9 @@ namespace drake {
                     // get output
                     Eigen::MatrixXd xtraj = traj_opt.getStateTrajectoryMatrix(num_states);
                     Eigen::MatrixXd utraj = traj_opt.getInputTrajectoryMatrix(num_inputs);
+                    
+                    x_stream.close();
+                    u_stream.close();
                     
                     // write output to files
                     writeStateToFile(solver_name, trial, xtraj);

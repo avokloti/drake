@@ -192,7 +192,7 @@ for s in np.arange(len(solvers)):
         plt.scatter(x0s[ind][0], x0s[ind][2], s=3, color='black')
         plt.scatter(xfs[ind][0], xfs[ind][2], s=3, color='black')
 
-handles_ord = [handles[]
+#handles_ord = [handles[]
 plt.title('Solution Trajectories (2-D Projection)')
 plt.xlabel('x-axis (m)')
 plt.ylabel('z-axis (m)')
@@ -200,7 +200,7 @@ plt.legend(handles[::-1], names[::-1])
 plt.show()
 
 
-
+index = 0
 
 # make a bar plot for mean/sd of optimal objective value
 plt.figure()

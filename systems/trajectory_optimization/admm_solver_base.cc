@@ -33,17 +33,10 @@ namespace drake {
                     num_states = context->get_num_total_states();
                     num_inputs = system->get_input_port(0).size();
                     
-                    initial_rho1 = 100;
-                    //initial_rho1 = 500;
-                    initial_rho2 = 2000;
-                    initial_rho3 = 200;
-                    
-                    rho1_decrease_rate = 1.05;
-                    //rho1_decrease_rate = 1.02; // decrease by a constant factor if constraints are satisfied
+                    rho1_decrease_rate = 1.0;// decrease by a constant factor if constraints are satisfied
                     rho2_increase_rate = 1.02; // increases by a constant factor with every iteration
                     rho3_increase_rate = 1.05; // increases by a constant factor with every iteration
                     rho_max = 1e9; // maximum value for rho2 and rho3
-                    rho1_min = 10;
                     
                     x0 = Eigen::VectorXd::Zero(num_states);
                     xf = Eigen::VectorXd::Zero(num_states);
@@ -53,17 +46,7 @@ namespace drake {
                     T = 0;
                     N = 0;
                     dt = 0;
-                    
-                    tol_feasibility = 1e-4;
-                    tol_constraints = 1e-4;
-                    tol_objective = 1e-3;
                     max_iter = 4000;
-                    
-                    // bounds on state and input
-                    x_lower_bound = Eigen::VectorXd::Zero(num_states);
-                    x_upper_bound = Eigen::VectorXd::Zero(num_states);
-                    u_lower_bound = Eigen::VectorXd::Zero(num_inputs);
-                    u_upper_bound = Eigen::VectorXd::Zero(num_inputs);
                     
                     solve_flag = false;
                     initial_state_flag = false;
@@ -81,17 +64,10 @@ namespace drake {
                     autodiff_context = autodiff_system->CreateDefaultContext();
                     autodiff_context->SetTimeStateAndParametersFrom(*context);
                     
-                    initial_rho1 = 100;
-                    initial_rho2 = 2000;
-                    initial_rho3 = 200;
-                    //initial_rho2 = 10000;
-                    //initial_rho3 = 1000;
-                    
-                    rho1_decrease_rate = 1.05; // decrease by a constant factor if constraints are satisfied
+                    rho1_decrease_rate = 1.0; // decrease by a constant factor if constraints are satisfied
                     rho2_increase_rate = 1.02; // increases by a constant factor with every iteration
                     rho3_increase_rate = 1.05; // increases by a constant factor with every iteration
                     rho_max = 1e9; // maximum value for rho2 and rho3
-                    rho1_min = 5;
                     
                     num_states = context->get_num_total_states();
                     num_inputs = system->get_input_port(0).size();
@@ -101,7 +77,7 @@ namespace drake {
                     
                     costQ = Eigen::MatrixXd::Zero(num_states, num_states);
                     costQf = Eigen::MatrixXd::Zero(num_states, num_states);
-                    costR = Eigen::MatrixXd::Identity(num_inputs, num_inputs);
+                    costR = Eigen::MatrixXd::Zero(num_inputs, num_inputs);
                     costq = Eigen::VectorXd::Zero((num_states + num_inputs) * par_N);
                     costqf = Eigen::VectorXd::Zero((num_states + num_inputs) * par_N);
                     costr = Eigen::VectorXd::Zero((num_states + num_inputs) * par_N);
@@ -111,17 +87,7 @@ namespace drake {
                     T = par_T;
                     N = par_N;
                     dt = T/N;
-                    
-                    tol_feasibility = 1e-4;
-                    tol_constraints = 1e-4;
-                    tol_objective = 1e-1;
                     max_iter = par_max_iter;
-                    
-                    // bounds on state and input
-                    x_lower_bound = Eigen::VectorXd::Zero(num_states);
-                    x_upper_bound = Eigen::VectorXd::Zero(num_states);
-                    u_lower_bound = Eigen::VectorXd::Zero(num_inputs);
-                    u_upper_bound = Eigen::VectorXd::Zero(num_inputs);
                     
                     solve_flag = false;
                     initial_state_flag = true;
@@ -279,6 +245,10 @@ namespace drake {
                 
                 Eigen::MatrixXd AdmmSolverBase::getSolutionInputTrajectory() {
                     return solution_u;
+                }
+                
+                Eigen::MatrixXd AdmmSolverBase::getSolutionVector() {
+                    return solution_y;
                 }
                 
                 int AdmmSolverBase::getNumLatestIterations() {

@@ -24,7 +24,7 @@
 #include "drake/manipulation/util/sim_diagram_builder.h"
 #include "drake/multibody/parsers/urdf_parser.h"
 
-DEFINE_double(simulation_sec, 4, "Number of seconds to simulate.");
+DEFINE_double(simulation_sec, 7, "Number of seconds to simulate.");
 
 using drake::geometry::SceneGraph;
 using drake::lcm::DrakeLcm;
@@ -44,10 +44,10 @@ namespace drake {
                 
                 // for reading files
                 std::ifstream input_file;
-                std::string input_folder = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/basic/";
+                std::string input_folder = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/";
                 
                 // problem parameters
-                int N = 10;
+                int N = 40;
                 //double T = 10.0;
                 int num_states = 14;
                 //int num_inputs = 7;
@@ -65,17 +65,25 @@ namespace drake {
                     
                     // state metric
                     //std::vector<MatrixXd> state(N);
-                    Eigen::MatrixXd knots = Eigen::MatrixXd::Zero(num_states, N);
-                    Eigen::MatrixXd breaks = Eigen::VectorXd::Zero(N);
+                    Eigen::MatrixXd knots = Eigen::MatrixXd::Zero(num_states, N + 1);
+                    Eigen::MatrixXd breaks = Eigen::VectorXd::Zero(N + 1);
                     
-                    // read values
+                    // read values (note that breaks and knots are shifted by one column to hold first point)
                     for (int i = 0; i < N; i++) {
-                        input_file >> breaks(i);
+                        input_file >> breaks(i + 1);
                         for (int ii = 0; ii < num_states; ii++) {
-                            input_file >> knots(ii, i);
+                            input_file >> knots(ii, i + 1);
                         }
                     }
                     input_file.close();
+                    
+                    // make first point hold for one second
+                    knots.col(0) = knots.col(1);
+                    breaks = breaks + Eigen::VectorXd::Ones(N+1);
+                    breaks(0) = 0;
+                    
+                    //std::cout << "Breaks: " << breaks << std::endl;
+                    //std::cout << "Knots: " << knots << std::endl;
                     
                     PiecewisePolynomial<double> traj = PiecewisePolynomial<double>::FirstOrderHold(breaks, knots);
                     
@@ -83,15 +91,17 @@ namespace drake {
                 }
                 
                 /* MAIN METHOD */
-                int DoMain() {
+                int DoMain(char* argv1) {
                     DRAKE_DEMAND(FLAGS_simulation_sec > 0);
                     
                     auto tree = std::make_unique<RigidBodyTree<double>>();
                     CreateTreedFromFixedModelAtPose(FindResourceOrThrow(kUrdfPath), tree.get());
                     
+                    parsers::urdf::AddModelInstanceFromUrdfFileWithRpyJointToWorld("/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/obstacle.urdf", &(*tree));
+                    
                     //PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("admm_al_x_0");
                     //PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("admm_pen_x_0");
-                    PiecewisePolynomial<double> traj = readFileAndMakeTrajectory("admm_al_ineq_x_0");
+                    PiecewisePolynomial<double> traj = readFileAndMakeTrajectory(argv1);
                     
                     drake::lcm::DrakeLcm lcm;
                     SimDiagramBuilder<double> builder;
@@ -122,7 +132,7 @@ namespace drake {
                     
                     systems::Simulator<double> simulator(*diagram);
                     simulator.Initialize();
-                    simulator.set_target_realtime_rate(0.5);
+                    simulator.set_target_realtime_rate(1);
                     
                     simulator.StepTo(FLAGS_simulation_sec);
                     
@@ -135,7 +145,11 @@ namespace drake {
 
 int main(int argc, char* argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-    return drake::examples::kuka_iiwa_arm::DoMain();
+    
+    if (argc <= 1) {
+        std::cout << "Please provide filename extension as an argument to bazel run!" << std::endl;
+    }
+    
+    return drake::examples::kuka_iiwa_arm::DoMain(argv[1]);
 }
-
 

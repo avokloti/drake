@@ -57,10 +57,7 @@ using drake::trajectories::PiecewisePolynomial;
 typedef drake::trajectories::PiecewisePolynomial<double> PiecewisePolynomialType;
 
 #define SHAPED_COST 0
-#define WARM_START_LINEAR 0
-#define WARM_START_IPOPT 0
-#define WARM_START_ADMM 0
-#define RANDOM_START 0
+#define OBS 1
 
 namespace drake {
     namespace examples {
@@ -86,7 +83,7 @@ namespace drake {
                 
                 // define time and number of points
                 int N = 40;
-                double T = 4.0;
+                double T = 6.0;
                 double dt = T/N;
                 
                 // matrices for running and final costs
@@ -114,7 +111,7 @@ namespace drake {
                 
                 // for writing files
                 std::ofstream output_file;
-                std::string output_folder = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/obstacles/";
+                std::string output_folder = "/Users/ira/Documents/drake/examples/kuka_iiwa_arm/controlled_kuka/output/test_obstacles/";
                 
                 drake::lcm::DrakeLcm lcm;
                 SimDiagramBuilder<double> builder;
@@ -126,6 +123,22 @@ namespace drake {
                 
                 //=============================================================================//
                 
+                /* WRITE OBSTACLES TO FILE */
+                int writeObstaclesToFile(int trial) {
+                    // write obstacles to file
+                    ofstream output_obs;
+                    output_obs.open(output_folder + "obstacles" + std::to_string(trial) + ".txt");
+                    if (!output_obs.is_open()) {
+                        cerr << "Problem opening obstacle output file.\n";
+                    }
+                    output_obs << obstacle_center_x.transpose() << endl;
+                    output_obs << obstacle_center_y.transpose() << endl;
+                    output_obs << obstacle_radii_x.transpose() << endl;
+                    output_obs << obstacle_radii_y.transpose() << endl;
+                    output_obs.close();
+                    
+                    return 0;
+                }
                 
                 /* WRITE STATE TO FILE */
                 int writeStateToFile(std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj) {
@@ -187,6 +200,69 @@ namespace drake {
                     return 0;
                 }
                 
+                /* OBSTACLE CONSTRAINTS
+                void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                    
+                    // prepare for kinematics calculations
+                    Eigen::VectorXd q = x.segment(0, 7);
+                    Eigen::VectorXd v = x.segment(7, 7);
+                    KinematicsCache<double> cache = rbtree->doKinematics(q, v);
+                    Eigen::Matrix<double, 3, -1> points = Eigen::Matrix<double, 3, -1>::Zero(3, 1);
+                    
+                    // calculate end-effector position and Jacobian
+                    Eigen::VectorXd ee = rbtree->transformPoints(cache, points, 10, 0);
+                    Eigen::MatrixXd ee_jacobian = rbtree->transformPointsJacobian(cache, points, 10, 0, false);
+                    
+                    // place correctly in constraint matrix
+                    for (int i = 0; i < num_obstacles; i++) {
+                        // entries of d
+                        g(i) = 1 - (obstacle_center_x[i] - ee[0]) * (obstacle_center_x[i] - ee[0])/(obstacle_radii_x[i] * obstacle_radii_x[i]) - (obstacle_center_y[i] - ee[1]) * (obstacle_center_y[i] - ee[1])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
+                        
+                        // entries of dd
+                        double aa = (ee[0] - obstacle_center_x[i])/(obstacle_radii_x[i] * obstacle_radii_x[i]);
+                        double bb = (ee[1] - obstacle_center_y[i])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
+                        Eigen::VectorXd gradient = -2 * (aa * ee_jacobian.row(0) + bb * ee_jacobian.row(1));
+                        dg_x.block(i, 0, 1, 7) = gradient.transpose();
+                        //std::cout << "\n" << "--" << "\n" << dg_x << std::endl;
+                    }
+                } */
+                
+                /* OBSTACLE CONSTRAINTS (better scaling?) */
+                void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
+                    
+                    // prepare for kinematics calculations
+                    Eigen::VectorXd q = x.segment(0, 7);
+                    Eigen::VectorXd v = x.segment(7, 7);
+                    KinematicsCache<double> cache = rbtree->doKinematics(q, v);
+                    Eigen::Matrix<double, 3, -1> points = Eigen::Matrix<double, 3, -1>::Zero(3, 1);
+                    
+                    // calculate end-effector position and Jacobian
+                    Eigen::VectorXd ee = rbtree->transformPoints(cache, points, 10, 0);
+                    Eigen::MatrixXd ee_jacobian = rbtree->transformPointsJacobian(cache, points, 10, 0, false);
+                    
+                    // place correctly in constraint matrix
+                    for (int i = 0; i < num_obstacles; i++) {
+                        // entries of d
+                        g(i) = (obstacle_radii_x[i] * obstacle_radii_x[i]) * (obstacle_radii_y[i] * obstacle_radii_y[i]) - (obstacle_center_x[i] - ee[0]) * (obstacle_center_x[i] - ee[0]) * (obstacle_radii_y[i] * obstacle_radii_y[i]) - (obstacle_center_y[i] - ee[1]) * (obstacle_center_y[i] - ee[1]) * (obstacle_radii_x[i] * obstacle_radii_x[i]);
+                        
+                        // entries of dd
+                        double aa = (ee[0] - obstacle_center_x[i]) * (obstacle_radii_y[i] * obstacle_radii_y[i]);
+                        double bb = (ee[1] - obstacle_center_y[i]) * (obstacle_radii_x[i] * obstacle_radii_x[i]);
+                        Eigen::VectorXd gradient = -2 * (aa * ee_jacobian.row(0) + bb * ee_jacobian.row(1));
+                        dg_x.block(i, 0, 1, 7) = gradient.transpose();
+                        //std::cout << "\n" << "--" << "\n" << dg_x << std::endl;
+                    }
+                }
+                
+                Eigen::VectorXd obstacleConstraintsHelper(Eigen::Ref<Eigen::VectorXd> x) {
+                    Eigen::VectorXd g(num_obstacles);
+                    Eigen::VectorXd temp_u = Eigen::VectorXd::Zero(num_inputs);
+                    Eigen::MatrixXd temp_dg_x(num_obstacles, num_states);
+                    Eigen::MatrixXd temp_dg_u(num_obstacles, num_inputs);
+                    obstacleConstraints(0, x, temp_u, g, temp_dg_x, temp_dg_u);
+                    return g;
+                }
+                
                 /* WRITE HEADER FILE */
                 int writeHeaderFile(drake::systems::RigidBodyPlant<double>* plant, std::string filename, int trial, Eigen::Ref<Eigen::MatrixXd> traj_x, Eigen::Ref<Eigen::MatrixXd> traj_u, double tolerance, double time, std::string solve_result) {
                     
@@ -240,6 +316,7 @@ namespace drake {
                     output_file << error_vector.lpNorm<Infinity>() << endl;
                     
                     // calculate obstacle avoidance error, combined with state and input bound error
+                    Eigen::VectorXd obstacle_error = Eigen::VectorXd::Zero(N * num_obstacles);
                     Eigen::VectorXd bounds_error = Eigen::VectorXd::Zero(2 * N * (num_states + num_inputs));
                     
                     for (int i = 0; i < N; i++) {
@@ -248,11 +325,11 @@ namespace drake {
                             int start_index = 2 * (i * num_states + j);
                             bounds_error[start_index] = std::max(traj_x(j, i) - state_upper_bound[j], 0.0);
                             bounds_error[start_index + 1] = std::max(state_lower_bound[j] - traj_x(j, i), 0.0);
-                            if (bounds_error[start_index] > 0) {
-                                std::cout << "Point " << i << " at state " << j << "violates state upper bound: " << traj_x(j, i) << std::endl;
+                            if (bounds_error[start_index] > tolerance) {
+                                std::cout << "Point " << i << " at state " << j << " violates state upper bound by " << bounds_error[start_index] << std::endl;
                             }
-                            if (bounds_error[start_index+1] > 0) {
-                                std::cout << "Point " << i << " at state " << j << "violates state lower bound: " << traj_x(j, i) << std::endl;
+                            if (bounds_error[start_index+1] > tolerance) {
+                                std::cout << "Point " << i << " at state " << j << " violates state lower bound by " << bounds_error[start_index+1] << std::endl;
                             }
                         }
                         for (int j = 0; j < num_inputs; j++) {
@@ -260,18 +337,25 @@ namespace drake {
                             bounds_error[start_index] = std::max(traj_u(j, i) - input_upper_bound[j], 0.0);
                             bounds_error[start_index + 1] = std::max(input_lower_bound[j] - traj_u(j, i), 0.0);
                             
-                            if (bounds_error[start_index] > 0) {
-                                std::cout << "Point " << i << " violates input upper bound" << std::endl;
+                            if (bounds_error[start_index] > tolerance) {
+                                std::cout << "Point " << i << " at input " << j << " violates input upper bound by " << bounds_error[start_index] << std::endl;
                             }
-                            if (bounds_error[start_index+1] > 0) {
-                                std::cout << "Point " << i << " violates input lower bound" << std::endl;
+                            if (bounds_error[start_index+1] > tolerance) {
+                                std::cout << "Point " << i << " at input " << j << " violates input lower bound by " << bounds_error[start_index+1] << std::endl;
                             }
                         }
+                        
+                        obstacle_error.segment(i * num_obstacles, num_obstacles) = obstacleConstraintsHelper(traj_x.col(i)).cwiseMax(Eigen::VectorXd::Zero(num_obstacles));
                     }
                     
+                    Eigen::VectorXd constraint_error(N * (num_obstacles + 2 * num_states + 2 * num_inputs));
+                    constraint_error << obstacle_error, bounds_error;
+                    
+                    std::cout << obstacle_error << std::endl;
+                    
                     // append to the end of the output file
-                    output_file << bounds_error.lpNorm<2>() << endl;
-                    output_file << bounds_error.lpNorm<Infinity>() << endl;
+                    output_file << constraint_error.lpNorm<2>() << endl;
+                    output_file << constraint_error.lpNorm<Infinity>() << endl;
                     
                     // write objective value to header file
                     double objective;
@@ -300,6 +384,8 @@ namespace drake {
                         R = Eigen::MatrixXd::Identity(num_inputs, num_inputs) * 0.000001;
                     } else {
                         Q = Eigen::MatrixXd::Zero(num_states, num_states);
+                        // adding this in for a cost on velocities?
+                        Q.block(num_states/2, num_states/2, num_states/2, num_states/2) = Eigen::MatrixXd::Identity(num_states/2, num_states/2) * 0.001;
                         Qf = Eigen::MatrixXd::Zero(num_states, num_states);
                         R = Eigen::MatrixXd::Identity(num_inputs, num_inputs) * 0.001;
                     }
@@ -311,14 +397,40 @@ namespace drake {
                     input_upper_bound = Eigen::VectorXd::Ones(num_inputs) * 200;
                     
                     // x0 and xf
-                    x0 << 0, -0.683, 0, 1.77, 0, 0.88, -1.57, 0, 0, 0, 0, 0, 0, 0;
-                    xf << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0;
+                    //x0 << 0, -0.683, 0, 1.77, 0, 0.88, -1.57, 0, 0, 0, 0, 0, 0, 0;
+                    //xf << 0, 0, 0, -pi/4.0, 0, pi/4.0, pi/2.0, 0, 0, 0, 0, 0, 0, 0;
+                    
+                    x0 << -1, -1, -1, -1, -1, -1, -1.5, 0, 0, 0, 0, 0, 0, 0;
+                    xf << 1, 1, 1, 1, 1, 1, 1.5, 0, 0, 0, 0, 0, 0, 0;
+                    
+                    //x0 << 0, 0, pi/2, pi/2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    //xf << 0, 0, -pi/2, pi/2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+                    
                     
                     // obstacles
-                    obstacle_center_x << -0.1;
-                    obstacle_center_y << 0.0;
-                    obstacle_radii_x << 0.1;
-                    obstacle_radii_y << 0.1;
+                    // 1. no obstacles
+                    
+                    // 2. away from trajectory...
+                    //obstacle_center_x << 4.0;
+                    //obstacle_center_y << 4.0;
+                    //obstacle_radii_x << 1;
+                    //obstacle_radii_y << 1;
+                    
+                    // 4. nearby, but does not interferes with trajectory
+                    obstacle_center_x << -0.2;
+                    obstacle_center_y << 0.05;
+                    obstacle_radii_x << 0.05;
+                    obstacle_radii_y << 0.05;
+                    
+                    // 4. interferes with trajectory...
+                    //obstacle_center_x << -0.2;
+                    //obstacle_center_y << 0.05;
+                    //obstacle_radii_x << 0.15;
+                    //obstacle_radii_y << 0.1;
+                    
+                    if (OBS) {
+                        writeObstaclesToFile(0);
+                    }
                 }
                 
                 std::string solutionResultToString(solvers::SolutionResult result) {
@@ -359,10 +471,10 @@ namespace drake {
                         Eigen::VectorXd q = traj.block(0, i, 7, 1);
                         Eigen::VectorXd v = traj.block(7, i, 7, 1);
                         KinematicsCache<double> cache = rbtree->doKinematics(q, v);
-                        ee_traj.col(i) = rbtree->transformPoints(cache, points, 6, 0);
+                        ee_traj.col(i) = rbtree->transformPoints(cache, points, 10, 0);
                     }
                     
-                    std::cout << "ee_traj:\n" << ee_traj << std::endl;
+                    //std::cout << "ee_traj:\n" << ee_traj << std::endl;
                     return ee_traj;
                 }
                 
@@ -389,7 +501,7 @@ namespace drake {
                 }
                 
                 
-                Eigen::VectorXd solveOPT(drake::systems::RigidBodyPlant<double>* plant, solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, Eigen::Ref<Eigen::MatrixXd> warm_start_traj) {
+                Eigen::VectorXd solveOPT(drake::systems::RigidBodyPlant<double>* plant, solvers::MathematicalProgramSolverInterface* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, Eigen::Ref<Eigen::VectorXd> initial_traj) {
                     
                     systems::trajectory_optimization::MidpointTranscription traj_opt(plant, *plant->CreateDefaultContext(), N, dt, dt);
                     
@@ -397,8 +509,23 @@ namespace drake {
                     auto u = traj_opt.input();
                     auto x = traj_opt.state();
                     
-                    std::cout << "x size? " << x.size() << std::endl;
-                    std::cout << "x(1)? " << x(1) << std::endl;
+                    //std::cout << "x size? " << x.size() << std::endl;
+                    //std::cout << "x(1)? " << x(1) << std::endl;
+                    
+                    // open file for writing trajectories
+                    ofstream x_stream;
+                    x_stream.open(output_folder + solver_name + "_traj_x_" + std::to_string(trial) + ".txt");
+                    if (!x_stream.is_open()) {
+                        std::cerr << "Problem opening trajectory x output file (in solveOPT).";
+                    }
+                    
+                    ofstream u_stream;
+                    u_stream.open(output_folder + solver_name + "_traj_u_" + std::to_string(trial) + ".txt");
+                    if (!u_stream.is_open()) {
+                        std::cerr << "Problem opening trajectory x output file (in solveOPT).";
+                    }
+                    
+                    traj_opt.AddPrintingConstraintToAllPoints(x_stream, u_stream);
                     
                     // add input limits to problem
                     traj_opt.AddConstraintToAllKnotPoints(u >= input_lower_bound);
@@ -418,11 +545,27 @@ namespace drake {
                     traj_opt.AddLinearConstraint(traj_opt.final_state() == xf);
                     
                     // obstacle constraint?
-                    traj_opt.AddTaskSpaceObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, *rbtree);
+                    if (OBS) {
+                        traj_opt.AddTaskSpaceObstacleConstraintToAllPoints(obstacle_center_x, obstacle_center_y, obstacle_radii_x, obstacle_radii_y, *rbtree);
+                    }
                     
                     // initialize trajectory
-                    auto traj_init_x = PiecewisePolynomial<double>::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), warm_start_traj);
-                    traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
+                    //auto traj_init_x = PiecewisePolynomial<double>::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), warm_start_traj);
+                    //traj_opt.SetInitialTrajectory(PiecewisePolynomialType(), traj_init_x);
+                    
+                    // create initial trajectories
+                    Eigen::VectorXd initial_traj_x = initial_traj.segment(0, N * num_states);
+                    Eigen::VectorXd initial_traj_u = initial_traj.segment(N * num_states, N * num_inputs);
+                    
+                    Map<MatrixXd> initial_x(initial_traj_x.data(), num_states, N);
+                    Map<MatrixXd> initial_u(initial_traj_u.data(), num_inputs, N);
+                    
+                    auto traj_init_x = PiecewisePolynomialType::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), initial_x);
+                    auto traj_init_u = PiecewisePolynomialType::Cubic(Eigen::VectorXd::LinSpaced(N, 0, T), initial_u);
+                    
+                    // initialize trajectory
+                    traj_opt.SetInitialTrajectory(traj_init_u, traj_init_x);
+                    
                     
                     // set solver options for ipopt
                     if (solver_name == "ipopt") {
@@ -437,11 +580,16 @@ namespace drake {
                     } else if (solver_name == "snopt") {
                         // set solver options for snopt
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Scale option", 0);
-                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.01);
+                        traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major feasibility tolerance", tolerance * 0.1);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Major optimality tolerance", 1e-3);
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Iterations limit", 100000);
                         const std::string print_file = output_folder + "snopt_output_" + std::to_string(trial) + ".out";
                         cout << "Should be printing to " << print_file << endl;
+                        
+                        std::ofstream ofs;
+                        ofs.open(print_file, std::ofstream::out | std::ofstream::trunc);
+                        ofs.close();
+                        
                         traj_opt.SetSolverOption(solvers::SnoptSolver::id(), "Print file", print_file);
                     }
                     
@@ -467,6 +615,9 @@ namespace drake {
                     writeHeaderFile(plant, solver_name, trial, xtraj, utraj, tolerance, elapsed_time.count(), solutionResultToString(result));
                     printEndEffectorTraj(solver_name, trial, xtraj);
                     
+                    x_stream.close();
+                    u_stream.close();
+                    
                     Eigen::VectorXd opt_traj(N * (num_states + num_inputs));
                     Map<VectorXd> xtraj_reshape(xtraj.data(), xtraj.size());
                     Map<VectorXd> utraj_reshape(utraj.data(), utraj.size());
@@ -474,51 +625,21 @@ namespace drake {
                     return opt_traj;
                 }
                 
-                /* OBSTACLE CONSTRAINTS */
-                void obstacleConstraints(double time_index, Eigen::Ref<Eigen::VectorXd> x, Eigen::Ref<Eigen::VectorXd> u, Eigen::Ref<Eigen::VectorXd> g, Eigen::Ref<Eigen::MatrixXd> dg_x, Eigen::Ref<Eigen::MatrixXd> dg_u) {
-                    
-                    // prepare for kinematics calculations
-                    Eigen::VectorXd q = x.segment(0, 7);
-                    Eigen::VectorXd v = x.segment(7, 7);
-                    KinematicsCache<double> cache = rbtree->doKinematics(q, v);
-                    Eigen::Matrix<double, 3, -1> points = Eigen::Matrix<double, 3, -1>::Zero(3, 1);
-                    
-                    // calculate end-effector position and Jacobian
-                    Eigen::VectorXd ee = rbtree->transformPoints(cache, points, 6, 0);
-                    Eigen::MatrixXd ee_jacobian = rbtree->transformPointsJacobian(cache, points, 6, 0, false);
-                    
-                    // place correctly in constraint matrix
-                    for (int i = 0; i < num_obstacles; i++) {
-                        // entries of d
-                        g(i) = 1 - (obstacle_center_x[i] - ee[0]) * (obstacle_center_x[i] - ee[0])/(obstacle_radii_x[i] * obstacle_radii_x[i]) - (obstacle_center_y[i] - ee[1]) * (obstacle_center_y[i] - ee[1])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
-                        
-                        // entries of dd
-                        double aa = (ee[0] - obstacle_center_x[i])/(obstacle_radii_x[i] * obstacle_radii_x[i]);
-                        double bb = (ee[1] - obstacle_center_y[i])/(obstacle_radii_y[i] * obstacle_radii_y[i]);
-                        Eigen::VectorXd gradient = aa * ee_jacobian.row(0) + bb * ee_jacobian.row(1);
-                        dg_x.block(i, 0, 1, 7) = -2 * gradient;
-                    }
-                }
-                
-                Eigen::MatrixXd solveADMM(drake::systems::RigidBodyPlant<double>* plant, systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, Eigen::Ref<Eigen::VectorXd> warm_start_traj) {
+                Eigen::VectorXd solveADMM(drake::systems::RigidBodyPlant<double>* plant, systems::trajectory_optimization::admm_solver::AdmmSolverBase* solver, std::string solver_name, double tolerance, int trial, std::string problem_type, Eigen::Ref<Eigen::VectorXd> warm_start_traj) {
                     
                     std::cout << "\n=============== Solving problem " << problem_type << " with " << solver_name << "!\n" << std::endl;
                     
                     // set tolerances
                     solver->setFeasibilityTolerance(tolerance);
+                    solver->setConstraintTolerance(tolerance);
+                    solver->setObjectiveTolerance(1.0); // should essentially disable this
                     solver->setKnotPoints(N);
                     solver->setStartAndEndState(x0, xf);
                     solver->setTotalTime(T);
-                    
-                    if (solver_name == "admm") {
-                        solver->setRho1(1);
-                        solver->setRho2(5000);
-                        solver->setRho3(2000);
-                    } else if (solver_name == "ali") {
-                        solver->setRho1(100);
-                        solver->setRho2(10);
-                        solver->setRho3(10);
-                    }
+                    solver->setRho1(10);
+                    solver->setRho2(5000);
+                    solver->setRho3(5000);
+                    solver->setMaxIterations(1000);
                     
                     Eigen::VectorXd temp_q = -Q.transpose() * xf - Q * xf;
                     Eigen::VectorXd temp_qf = -Qf.transpose() * xf - Qf * xf;
@@ -529,7 +650,10 @@ namespace drake {
                         solver->addQuadraticFinalCostOnState(Qf, temp_qf);
                     }
                     solver->addQuadraticRunningCostOnInput(R, temp_r);
-                    solver->addInequalityConstraintToAllKnotPoints(obstacleConstraints, num_obstacles, "obstacle constraints");
+                    
+                    if (OBS) {
+                        solver->addInequalityConstraintToAllKnotPoints(obstacleConstraints, num_obstacles, "obstacle constraints");
+                    }
                     
                     // state and input bounds
                     solver->setStateUpperBound(state_upper_bound);
@@ -560,13 +684,14 @@ namespace drake {
                     // write output to files
                     Eigen::MatrixXd xtraj_admm = solver->getSolutionStateTrajectory();
                     Eigen::MatrixXd utraj_admm = solver->getSolutionInputTrajectory();
+                    Eigen::VectorXd ytraj_admm = solver->getSolutionVector();
                     
                     writeStateToFile(solver_name, trial, xtraj_admm);
                     writeInputToFile(solver_name, trial, utraj_admm);
                     writeHeaderFile(plant, solver_name, trial, xtraj_admm, utraj_admm, tolerance, elapsed_time.count(), solve_result);
                     printEndEffectorTraj(solver_name, trial, xtraj_admm);
                     
-                    return xtraj_admm;
+                    return ytraj_admm;
                 }
                 
                 int DoMain() {
@@ -596,17 +721,19 @@ namespace drake {
                     solvers::MathematicalProgramSolverInterface* snopt_solver = new solvers::SnoptSolver();
                     
                     // initial vectors
-                    Eigen::VectorXd zero_traj_admm = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
-                    Eigen::MatrixXd zero_traj_opt = Eigen::MatrixXd::Zero(num_states, N);
+                    Eigen::VectorXd zero_traj = Eigen::VectorXd::Zero(N * (num_inputs + num_states));
+                    //Eigen::MatrixXd zero_traj_opt = Eigen::MatrixXd::Zero(num_states, N);
                     
                     Eigen::VectorXd q = Eigen::VectorXd::Zero(7);
                     Eigen::VectorXd v = Eigen::VectorXd::Zero(7);
                     KinematicsCache<double> cache = rbtree->doKinematics(q, v);
                     
+                    double tol = 1e-4;
+                    
                     // solve with all methods
-                    //Eigen::MatrixXd admm_sol = solveADMM(rbplant, solver_admm, "admm", 1e-6, 0, "simple", zero_traj_admm);
-                    Eigen::VectorXd ipopt_sol = solveOPT(rbplant, ipopt_solver, "ipopt", 1e-6, 0, "simple", zero_traj_opt);
-                    //Eigen::VectorXd snopt_sol = solveOPT(rbplant, snopt_solver, "snopt", 1e-6, 0, "simple", zero_traj_opt);
+                    Eigen::VectorXd admm_sol = solveADMM(rbplant, solver_admm, "admm", tol, 0, "simple", zero_traj);
+                    Eigen::VectorXd ipopt_sol = solveOPT(rbplant, ipopt_solver, "ipopt", tol, 0, "simple", zero_traj);
+                    Eigen::VectorXd snopt_sol = solveOPT(rbplant, snopt_solver, "snopt", tol, 0, "simple", zero_traj);
                     
                     delete solver_admm;
                     delete snopt_solver;
@@ -626,13 +753,26 @@ int main(int argc, char* argv[]) {
 
 
 // need to do...
-// (done): find how to resolve error with transformPoints
-// (done): get points and Jacobian
-// decide where to put cylindrical obstacle
-// write down constraint in pseudocode
-// implement constraint
-// write method to calculate end-effector trajectory given a vector, just to see if it looks plausible, and add to printing at end of file
-// if code runs, run example
-// while code runs, plot!
+// modernize this code... make sure everything is what I think it is
+// test different values of penalty parameters to see results; find something that works; run sweep around it
+// change callback functions to see internal iterations for SNOPT and IPOPT
 
+// forgot how to run Drake visualizer...
+// what about inverse kinematics...
 
+// maybe should re-run kuka arm param sweep first
+
+// changed obstacle to not interfere with initial/final conditions, oops
+
+// try placing obstacle not in the way of the
+
+// solves successfully (?) with no obstacles
+
+// write some plotting code to test...
+// if true error values < tolerance, successful solve
+// else if true error values < 10 * tolerance, almost solve
+// else fail
+
+// report results
+
+// plot

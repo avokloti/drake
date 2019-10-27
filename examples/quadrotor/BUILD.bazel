@@ -260,8 +260,8 @@ drake_cc_binary(
 )
 
 drake_cc_binary(
-    name = "run_quadrotor_rho_sweep",
-    srcs = ["run_quadrotor_rho_sweep.cc"],
+    name = "run_quadrotor_main",
+    srcs = ["run_quadrotor_main.cc"],
     copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
     deps = [
         ":quadrotor_plant",
@@ -341,8 +341,8 @@ drake_cc_binary(
 
 
 drake_cc_binary(
-    name = "run_quadrotor_snopt_ipopt_tests",
-    srcs = ["run_quadrotor_snopt_ipopt_tests.cc"],
+    name = "run_quadrotor_tolerance_sweep",
+    srcs = ["run_quadrotor_tolerance_sweep.cc"],
     copts = ["-Wno-error=unused-function", "-Wno-error=unused-variable"],
     deps = [
         ":quadrotor_plant",

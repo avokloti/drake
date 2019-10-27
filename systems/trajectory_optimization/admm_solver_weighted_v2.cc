@@ -349,7 +349,7 @@ namespace drake {
                             running_constraint_counter = running_constraint_counter + cf.length;
                         }
                         
-                        output_stream << "\n\n";
+                        //output_stream << "\n\n";
                         
                         // make sparse G matrix, holding all linearized constraints
                         G.setFromTriplets(tripletsG.begin(), tripletsG.end());
@@ -366,6 +366,8 @@ namespace drake {
                         
                         not_feasible = (feasibilityVector.lpNorm<Eigen::Infinity>() > tol_feasibility || constraintVector.lpNorm<Eigen::Infinity>() > tol_constraints);
                         not_converged = (abs(oldObjective - objective)/objective > tol_objective);
+                        //output_stream << abs(oldObjective - objective)/objective << "\t" << tol_objective << "\n";
+                        output_stream << tol_feasibility << "\t" << tol_constraints << "\n";
                         //not_converged = false;
                         
                         if (!not_feasible & !not_converged) {
@@ -410,7 +412,7 @@ namespace drake {
                         
                         // decrease rho1 if constraints are mostly satisfied
                         if (i > 100) {
-                            rho1 = max(rho1_min, rho1 / rho1_decrease_rate);
+                            rho1 = max(initial_rho1/100, rho1 / rho1_decrease_rate);
                         }
                         
                         // print / compute info
@@ -439,6 +441,7 @@ namespace drake {
                         solution_x.block(0, ii, num_states, 1) = y.segment(ii * num_states, num_states);
                         solution_u.block(0, ii, num_inputs, 1) = y.segment(N * num_states + ii * num_inputs, num_inputs);
                     }
+                    solution_y = y;
                     
                     // print timing information
                     output_stream << "\n---------------------------------\n";
